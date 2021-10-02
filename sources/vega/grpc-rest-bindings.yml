@@ -1,0 +1,49 @@
+---
+type: google.api.Service
+config_version: 3
+
+name: api.v1.trading
+title: Vega Trading API
+
+apis:
+  - name: TradingService
+  - name: CoreApiService
+
+http:
+  rules:
+    # transaction
+    - selector: api.v1.TradingService.SubmitTransactionV2
+      post: '/transaction'
+      body: "*"
+
+    # Miscellaneous
+    - selector: api.v1.TradingService.Statistics
+      get: '/statistics'
+    - selector: api.v1.TradingService.LastBlockHeight
+      get: '/blockchain/height'
+    - selector: api.v1.TradingService.GetVegaTime
+      get: '/time'
+
+    # Core APIs
+    - selector: vega.coreapi.v1.CoreApiService.ListNetworkParameters
+      get: '/network/parameters'
+    - selector: vega.coreapi.v1.CoreApiService.ListAccounts
+      get: '/accounts'
+    - selector: vega.coreapi.v1.CoreApiService.ListAssets
+      get: '/assets'
+    - selector: vega.coreapi.v1.CoreApiService.ListParties
+      get: '/parties'
+    - selector: vega.coreapi.v1.CoreApiService.ListPartiesStake
+      get: '/parties/stake'
+    - selector: vega.coreapi.v1.CoreApiService.ListValidators
+      get: '/validators'
+    - selector: vega.coreapi.v1.CoreApiService.ListProposals
+      get: '/proposals'
+    - selector: vega.coreapi.v1.CoreApiService.ListVotes
+      get: '/votes'
+    - selector: vega.coreapi.v1.CoreApiService.ListMarkets
+      get: '/markets'
+    - selector: vega.coreapi.v1.CoreApiService.ListMarketsData
+      get: '/markets/data'
+    - selector: vega.coreapi.v1.CoreApiService.ListDelegations
+      get: '/delegations'
