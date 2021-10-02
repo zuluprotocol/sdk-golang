@@ -1,0 +1,20 @@
+---
+
+name: Shell script tests
+
+"on":
+  pull_request:
+    branches:
+      - develop
+      - main
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
