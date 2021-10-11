@@ -11,6 +11,7 @@ import (
 	sync "sync"
 
 	vega "code.vegaprotocol.io/sdk-golang/vega"
+	v1 "code.vegaprotocol.io/sdk-golang/vega/events/v1"
 	proto "github.com/golang/protobuf/proto"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -27,14 +28,72 @@ const (
 // of the legacy proto package is being used.
 const _ = proto.ProtoPackageIsVersion4
 
-// Snapshot is the entire checkpoint serialised (basically serialised the Checkpoint message + hash)
+type Format int32
+
+const (
+	// Default value, always invalid
+	Format_FORMAT_UNSPECIFIED Format = 0
+	// Standard proto encoding
+	Format_FORMAT_PROTO Format = 1
+	// Compressed proto, might come in handy
+	Format_FORMAT_PROTO_COMPRESSED Format = 2
+	// Simple JSON serialisation, probably not going to be used
+	Format_FORMAT_JSON Format = 3
+)
+
+// Enum value maps for Format.
+var (
+	Format_name = map[int32]string{
+		0: "FORMAT_UNSPECIFIED",
+		1: "FORMAT_PROTO",
+		2: "FORMAT_PROTO_COMPRESSED",
+		3: "FORMAT_JSON",
+	}
+	Format_value = map[string]int32{
+		"FORMAT_UNSPECIFIED":      0,
+		"FORMAT_PROTO":            1,
+		"FORMAT_PROTO_COMPRESSED": 2,
+		"FORMAT_JSON":             3,
+	}
+)
+
+func (x Format) Enum() *Format {
+	p := new(Format)
+	*p = x
+	return p
+}
+
+func (x Format) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Format) Descriptor() protoreflect.EnumDescriptor {
+	return file_vega_snapshot_v1_snapshot_proto_enumTypes[0].Descriptor()
+}
+
+func (Format) Type() protoreflect.EnumType {
+	return &file_vega_snapshot_v1_snapshot_proto_enumTypes[0]
+}
+
+func (x Format) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Format.Descriptor instead.
+func (Format) EnumDescriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{0}
+}
+
 type Snapshot struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Hash  []byte `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
-	State []byte `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
+	Height   uint64 `protobuf:"varint,1,opt,name=height,proto3" json:"height,omitempty"`
+	Format   Format `protobuf:"varint,2,opt,name=format,proto3,enum=vega.snapshot.v1.Format" json:"format,omitempty"`
+	Chunks   uint32 `protobuf:"varint,3,opt,name=chunks,proto3" json:"chunks,omitempty"`
+	Hash     []byte `protobuf:"bytes,4,opt,name=hash,proto3" json:"hash,omitempty"`
+	Metadata []byte `protobuf:"bytes,5,opt,name=metadata,proto3" json:"metadata,omitempty"`
 }
 
 func (x *Snapshot) Reset() {
@@ -69,6 +128,27 @@ func (*Snapshot) Descriptor() ([]byte, []int) {
 	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{0}
 }
 
+func (x *Snapshot) GetHeight() uint64 {
+	if x != nil {
+		return x.Height
+	}
+	return 0
+}
+
+func (x *Snapshot) GetFormat() Format {
+	if x != nil {
+		return x.Format
+	}
+	return Format_FORMAT_UNSPECIFIED
+}
+
+func (x *Snapshot) GetChunks() uint32 {
+	if x != nil {
+		return x.Chunks
+	}
+	return 0
+}
+
 func (x *Snapshot) GetHash() []byte {
 	if x != nil {
 		return x.Hash
@@ -76,32 +156,1066 @@ func (x *Snapshot) GetHash() []byte {
 	return nil
 }
 
-func (x *Snapshot) GetState() []byte {
+func (x *Snapshot) GetMetadata() []byte {
 	if x != nil {
-		return x.State
+		return x.Metadata
 	}
 	return nil
 }
 
-// Checkpoint aggregates the various engine snapshots
+type NodeHash struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	FullKey   string `protobuf:"bytes,1,opt,name=full_key,json=fullKey,proto3" json:"full_key,omitempty"` // namespace<separator>key
+	Namespace string `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	Key       string `protobuf:"bytes,3,opt,name=key,proto3" json:"key,omitempty"`
+	Hash      string `protobuf:"bytes,4,opt,name=hash,proto3" json:"hash,omitempty"`
+}
+
+func (x *NodeHash) Reset() {
+	*x = NodeHash{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *NodeHash) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeHash) ProtoMessage() {}
+
+func (x *NodeHash) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeHash.ProtoReflect.Descriptor instead.
+func (*NodeHash) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *NodeHash) GetFullKey() string {
+	if x != nil {
+		return x.FullKey
+	}
+	return ""
+}
+
+func (x *NodeHash) GetNamespace() string {
+	if x != nil {
+		return x.Namespace
+	}
+	return ""
+}
+
+func (x *NodeHash) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *NodeHash) GetHash() string {
+	if x != nil {
+		return x.Hash
+	}
+	return ""
+}
+
+type Metadata struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Version     int64       `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"`
+	ChunkHashes []string    `protobuf:"bytes,2,rep,name=chunk_hashes,json=chunkHashes,proto3" json:"chunk_hashes,omitempty"`
+	NodeHashes  []*NodeHash `protobuf:"bytes,3,rep,name=node_hashes,json=nodeHashes,proto3" json:"node_hashes,omitempty"` // hashes used by snapshot engine, different to chunk hash if data was split up, or combined into a single chunk
+}
+
+func (x *Metadata) Reset() {
+	*x = Metadata{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Metadata) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Metadata) ProtoMessage() {}
+
+func (x *Metadata) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Metadata.ProtoReflect.Descriptor instead.
+func (*Metadata) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Metadata) GetVersion() int64 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *Metadata) GetChunkHashes() []string {
+	if x != nil {
+		return x.ChunkHashes
+	}
+	return nil
+}
+
+func (x *Metadata) GetNodeHashes() []*NodeHash {
+	if x != nil {
+		return x.NodeHashes
+	}
+	return nil
+}
+
+// Chunk is simply an as-is chunk belonging to a snapshot
+// not sure how usable this type would be
+type Chunk struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Data []*Payload `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	Nr   int64      `protobuf:"varint,2,opt,name=nr,proto3" json:"nr,omitempty"` // in case of multi-part data, this is chunk nr...
+	Of   int64      `protobuf:"varint,3,opt,name=of,proto3" json:"of,omitempty"` // ...of a total of N chunks
+}
+
+func (x *Chunk) Reset() {
+	*x = Chunk{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Chunk) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Chunk) ProtoMessage() {}
+
+func (x *Chunk) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Chunk.ProtoReflect.Descriptor instead.
+func (*Chunk) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *Chunk) GetData() []*Payload {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+func (x *Chunk) GetNr() int64 {
+	if x != nil {
+		return x.Nr
+	}
+	return 0
+}
+
+func (x *Chunk) GetOf() int64 {
+	if x != nil {
+		return x.Of
+	}
+	return 0
+}
+
+type Payload struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Types that are assignable to Data:
+	//	*Payload_ActiveAssets
+	//	*Payload_PendingAssets
+	//	*Payload_BankingWithdrawals
+	//	*Payload_BankingDeposits
+	//	*Payload_BankingSeen
+	//	*Payload_Checkpoint
+	//	*Payload_CollateralAccounts
+	//	*Payload_CollateralAssets
+	//	*Payload_DelegationActive
+	//	*Payload_DelegationPending
+	//	*Payload_DelegationAuto
+	//	*Payload_GovernanceActive
+	//	*Payload_GovernanceEnacted
+	//	*Payload_StakingAccounts
+	//	*Payload_MatchingBook
+	//	*Payload_NetworkParameters
+	//	*Payload_ExecutionMarkets
+	//	*Payload_MarketPositions
+	//	*Payload_AppState
+	//	*Payload_Epoch
+	Data isPayload_Data `protobuf_oneof:"data"`
+}
+
+func (x *Payload) Reset() {
+	*x = Payload{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Payload) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Payload) ProtoMessage() {}
+
+func (x *Payload) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Payload.ProtoReflect.Descriptor instead.
+func (*Payload) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{4}
+}
+
+func (m *Payload) GetData() isPayload_Data {
+	if m != nil {
+		return m.Data
+	}
+	return nil
+}
+
+func (x *Payload) GetActiveAssets() *ActiveAssets {
+	if x, ok := x.GetData().(*Payload_ActiveAssets); ok {
+		return x.ActiveAssets
+	}
+	return nil
+}
+
+func (x *Payload) GetPendingAssets() *PendingAssets {
+	if x, ok := x.GetData().(*Payload_PendingAssets); ok {
+		return x.PendingAssets
+	}
+	return nil
+}
+
+func (x *Payload) GetBankingWithdrawals() *BankingWithdrawals {
+	if x, ok := x.GetData().(*Payload_BankingWithdrawals); ok {
+		return x.BankingWithdrawals
+	}
+	return nil
+}
+
+func (x *Payload) GetBankingDeposits() *BankingDeposits {
+	if x, ok := x.GetData().(*Payload_BankingDeposits); ok {
+		return x.BankingDeposits
+	}
+	return nil
+}
+
+func (x *Payload) GetBankingSeen() *BankingSeen {
+	if x, ok := x.GetData().(*Payload_BankingSeen); ok {
+		return x.BankingSeen
+	}
+	return nil
+}
+
+func (x *Payload) GetCheckpoint() *Checkpoint {
+	if x, ok := x.GetData().(*Payload_Checkpoint); ok {
+		return x.Checkpoint
+	}
+	return nil
+}
+
+func (x *Payload) GetCollateralAccounts() *CollateralAccounts {
+	if x, ok := x.GetData().(*Payload_CollateralAccounts); ok {
+		return x.CollateralAccounts
+	}
+	return nil
+}
+
+func (x *Payload) GetCollateralAssets() *CollateralAssets {
+	if x, ok := x.GetData().(*Payload_CollateralAssets); ok {
+		return x.CollateralAssets
+	}
+	return nil
+}
+
+func (x *Payload) GetDelegationActive() *DelegationActive {
+	if x, ok := x.GetData().(*Payload_DelegationActive); ok {
+		return x.DelegationActive
+	}
+	return nil
+}
+
+func (x *Payload) GetDelegationPending() *DelegationPending {
+	if x, ok := x.GetData().(*Payload_DelegationPending); ok {
+		return x.DelegationPending
+	}
+	return nil
+}
+
+func (x *Payload) GetDelegationAuto() *DelegationAuto {
+	if x, ok := x.GetData().(*Payload_DelegationAuto); ok {
+		return x.DelegationAuto
+	}
+	return nil
+}
+
+func (x *Payload) GetGovernanceActive() *GovernanceActive {
+	if x, ok := x.GetData().(*Payload_GovernanceActive); ok {
+		return x.GovernanceActive
+	}
+	return nil
+}
+
+func (x *Payload) GetGovernanceEnacted() *GovernanceEnacted {
+	if x, ok := x.GetData().(*Payload_GovernanceEnacted); ok {
+		return x.GovernanceEnacted
+	}
+	return nil
+}
+
+func (x *Payload) GetStakingAccounts() *StakingAccounts {
+	if x, ok := x.GetData().(*Payload_StakingAccounts); ok {
+		return x.StakingAccounts
+	}
+	return nil
+}
+
+func (x *Payload) GetMatchingBook() *MatchingBook {
+	if x, ok := x.GetData().(*Payload_MatchingBook); ok {
+		return x.MatchingBook
+	}
+	return nil
+}
+
+func (x *Payload) GetNetworkParameters() *NetParams {
+	if x, ok := x.GetData().(*Payload_NetworkParameters); ok {
+		return x.NetworkParameters
+	}
+	return nil
+}
+
+func (x *Payload) GetExecutionMarkets() *ExecutionMarkets {
+	if x, ok := x.GetData().(*Payload_ExecutionMarkets); ok {
+		return x.ExecutionMarkets
+	}
+	return nil
+}
+
+func (x *Payload) GetMarketPositions() *MarketPositions {
+	if x, ok := x.GetData().(*Payload_MarketPositions); ok {
+		return x.MarketPositions
+	}
+	return nil
+}
+
+func (x *Payload) GetAppState() *AppState {
+	if x, ok := x.GetData().(*Payload_AppState); ok {
+		return x.AppState
+	}
+	return nil
+}
+
+func (x *Payload) GetEpoch() *EpochState {
+	if x, ok := x.GetData().(*Payload_Epoch); ok {
+		return x.Epoch
+	}
+	return nil
+}
+
+type isPayload_Data interface {
+	isPayload_Data()
+}
+
+type Payload_ActiveAssets struct {
+	ActiveAssets *ActiveAssets `protobuf:"bytes,1,opt,name=active_assets,json=activeAssets,proto3,oneof"`
+}
+
+type Payload_PendingAssets struct {
+	PendingAssets *PendingAssets `protobuf:"bytes,2,opt,name=pending_assets,json=pendingAssets,proto3,oneof"`
+}
+
+type Payload_BankingWithdrawals struct {
+	BankingWithdrawals *BankingWithdrawals `protobuf:"bytes,3,opt,name=banking_withdrawals,json=bankingWithdrawals,proto3,oneof"`
+}
+
+type Payload_BankingDeposits struct {
+	BankingDeposits *BankingDeposits `protobuf:"bytes,4,opt,name=banking_deposits,json=bankingDeposits,proto3,oneof"`
+}
+
+type Payload_BankingSeen struct {
+	BankingSeen *BankingSeen `protobuf:"bytes,5,opt,name=banking_seen,json=bankingSeen,proto3,oneof"`
+}
+
+type Payload_Checkpoint struct {
+	Checkpoint *Checkpoint `protobuf:"bytes,6,opt,name=checkpoint,proto3,oneof"`
+}
+
+type Payload_CollateralAccounts struct {
+	CollateralAccounts *CollateralAccounts `protobuf:"bytes,7,opt,name=collateral_accounts,json=collateralAccounts,proto3,oneof"`
+}
+
+type Payload_CollateralAssets struct {
+	CollateralAssets *CollateralAssets `protobuf:"bytes,8,opt,name=collateral_assets,json=collateralAssets,proto3,oneof"`
+}
+
+type Payload_DelegationActive struct {
+	DelegationActive *DelegationActive `protobuf:"bytes,9,opt,name=delegation_active,json=delegationActive,proto3,oneof"`
+}
+
+type Payload_DelegationPending struct {
+	DelegationPending *DelegationPending `protobuf:"bytes,10,opt,name=delegation_pending,json=delegationPending,proto3,oneof"`
+}
+
+type Payload_DelegationAuto struct {
+	DelegationAuto *DelegationAuto `protobuf:"bytes,11,opt,name=delegation_auto,json=delegationAuto,proto3,oneof"`
+}
+
+type Payload_GovernanceActive struct {
+	GovernanceActive *GovernanceActive `protobuf:"bytes,12,opt,name=governance_active,json=governanceActive,proto3,oneof"`
+}
+
+type Payload_GovernanceEnacted struct {
+	GovernanceEnacted *GovernanceEnacted `protobuf:"bytes,13,opt,name=governance_enacted,json=governanceEnacted,proto3,oneof"`
+}
+
+type Payload_StakingAccounts struct {
+	StakingAccounts *StakingAccounts `protobuf:"bytes,14,opt,name=staking_accounts,json=stakingAccounts,proto3,oneof"`
+}
+
+type Payload_MatchingBook struct {
+	MatchingBook *MatchingBook `protobuf:"bytes,15,opt,name=matching_book,json=matchingBook,proto3,oneof"`
+}
+
+type Payload_NetworkParameters struct {
+	NetworkParameters *NetParams `protobuf:"bytes,16,opt,name=network_parameters,json=networkParameters,proto3,oneof"`
+}
+
+type Payload_ExecutionMarkets struct {
+	ExecutionMarkets *ExecutionMarkets `protobuf:"bytes,17,opt,name=execution_markets,json=executionMarkets,proto3,oneof"`
+}
+
+type Payload_MarketPositions struct {
+	MarketPositions *MarketPositions `protobuf:"bytes,18,opt,name=market_positions,json=marketPositions,proto3,oneof"`
+}
+
+type Payload_AppState struct {
+	AppState *AppState `protobuf:"bytes,19,opt,name=app_state,json=appState,proto3,oneof"`
+}
+
+type Payload_Epoch struct {
+	Epoch *EpochState `protobuf:"bytes,20,opt,name=epoch,proto3,oneof"`
+}
+
+func (*Payload_ActiveAssets) isPayload_Data() {}
+
+func (*Payload_PendingAssets) isPayload_Data() {}
+
+func (*Payload_BankingWithdrawals) isPayload_Data() {}
+
+func (*Payload_BankingDeposits) isPayload_Data() {}
+
+func (*Payload_BankingSeen) isPayload_Data() {}
+
+func (*Payload_Checkpoint) isPayload_Data() {}
+
+func (*Payload_CollateralAccounts) isPayload_Data() {}
+
+func (*Payload_CollateralAssets) isPayload_Data() {}
+
+func (*Payload_DelegationActive) isPayload_Data() {}
+
+func (*Payload_DelegationPending) isPayload_Data() {}
+
+func (*Payload_DelegationAuto) isPayload_Data() {}
+
+func (*Payload_GovernanceActive) isPayload_Data() {}
+
+func (*Payload_GovernanceEnacted) isPayload_Data() {}
+
+func (*Payload_StakingAccounts) isPayload_Data() {}
+
+func (*Payload_MatchingBook) isPayload_Data() {}
+
+func (*Payload_NetworkParameters) isPayload_Data() {}
+
+func (*Payload_ExecutionMarkets) isPayload_Data() {}
+
+func (*Payload_MarketPositions) isPayload_Data() {}
+
+func (*Payload_AppState) isPayload_Data() {}
+
+func (*Payload_Epoch) isPayload_Data() {}
+
+type CollateralAccounts struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Accounts []*vega.Account `protobuf:"bytes,1,rep,name=accounts,proto3" json:"accounts,omitempty"`
+}
+
+func (x *CollateralAccounts) Reset() {
+	*x = CollateralAccounts{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CollateralAccounts) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CollateralAccounts) ProtoMessage() {}
+
+func (x *CollateralAccounts) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CollateralAccounts.ProtoReflect.Descriptor instead.
+func (*CollateralAccounts) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *CollateralAccounts) GetAccounts() []*vega.Account {
+	if x != nil {
+		return x.Accounts
+	}
+	return nil
+}
+
+type CollateralAssets struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Assets []*vega.Asset `protobuf:"bytes,1,rep,name=assets,proto3" json:"assets,omitempty"`
+}
+
+func (x *CollateralAssets) Reset() {
+	*x = CollateralAssets{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CollateralAssets) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CollateralAssets) ProtoMessage() {}
+
+func (x *CollateralAssets) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CollateralAssets.ProtoReflect.Descriptor instead.
+func (*CollateralAssets) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *CollateralAssets) GetAssets() []*vega.Asset {
+	if x != nil {
+		return x.Assets
+	}
+	return nil
+}
+
+type ActiveAssets struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Assets []*vega.Asset `protobuf:"bytes,1,rep,name=assets,proto3" json:"assets,omitempty"`
+}
+
+func (x *ActiveAssets) Reset() {
+	*x = ActiveAssets{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ActiveAssets) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ActiveAssets) ProtoMessage() {}
+
+func (x *ActiveAssets) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ActiveAssets.ProtoReflect.Descriptor instead.
+func (*ActiveAssets) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ActiveAssets) GetAssets() []*vega.Asset {
+	if x != nil {
+		return x.Assets
+	}
+	return nil
+}
+
+type PendingAssets struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Assets []*vega.Asset `protobuf:"bytes,1,rep,name=assets,proto3" json:"assets,omitempty"`
+}
+
+func (x *PendingAssets) Reset() {
+	*x = PendingAssets{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PendingAssets) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PendingAssets) ProtoMessage() {}
+
+func (x *PendingAssets) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PendingAssets.ProtoReflect.Descriptor instead.
+func (*PendingAssets) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *PendingAssets) GetAssets() []*vega.Asset {
+	if x != nil {
+		return x.Assets
+	}
+	return nil
+}
+
+type Withdrawal struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Ref        string           `protobuf:"bytes,1,opt,name=ref,proto3" json:"ref,omitempty"`
+	Withdrawal *vega.Withdrawal `protobuf:"bytes,2,opt,name=withdrawal,proto3" json:"withdrawal,omitempty"`
+}
+
+func (x *Withdrawal) Reset() {
+	*x = Withdrawal{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[9]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Withdrawal) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Withdrawal) ProtoMessage() {}
+
+func (x *Withdrawal) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[9]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Withdrawal.ProtoReflect.Descriptor instead.
+func (*Withdrawal) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *Withdrawal) GetRef() string {
+	if x != nil {
+		return x.Ref
+	}
+	return ""
+}
+
+func (x *Withdrawal) GetWithdrawal() *vega.Withdrawal {
+	if x != nil {
+		return x.Withdrawal
+	}
+	return nil
+}
+
+type Deposit struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Id      string        `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Deposit *vega.Deposit `protobuf:"bytes,2,opt,name=deposit,proto3" json:"deposit,omitempty"`
+}
+
+func (x *Deposit) Reset() {
+	*x = Deposit{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[10]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Deposit) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Deposit) ProtoMessage() {}
+
+func (x *Deposit) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[10]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Deposit.ProtoReflect.Descriptor instead.
+func (*Deposit) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *Deposit) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Deposit) GetDeposit() *vega.Deposit {
+	if x != nil {
+		return x.Deposit
+	}
+	return nil
+}
+
+type TxRef struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Asset    string `protobuf:"bytes,1,opt,name=asset,proto3" json:"asset,omitempty"`
+	BlockNr  uint64 `protobuf:"varint,2,opt,name=block_nr,json=blockNr,proto3" json:"block_nr,omitempty"`
+	Hash     string `protobuf:"bytes,3,opt,name=hash,proto3" json:"hash,omitempty"`
+	LogIndex uint64 `protobuf:"varint,4,opt,name=log_index,json=logIndex,proto3" json:"log_index,omitempty"`
+}
+
+func (x *TxRef) Reset() {
+	*x = TxRef{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[11]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TxRef) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TxRef) ProtoMessage() {}
+
+func (x *TxRef) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[11]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TxRef.ProtoReflect.Descriptor instead.
+func (*TxRef) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *TxRef) GetAsset() string {
+	if x != nil {
+		return x.Asset
+	}
+	return ""
+}
+
+func (x *TxRef) GetBlockNr() uint64 {
+	if x != nil {
+		return x.BlockNr
+	}
+	return 0
+}
+
+func (x *TxRef) GetHash() string {
+	if x != nil {
+		return x.Hash
+	}
+	return ""
+}
+
+func (x *TxRef) GetLogIndex() uint64 {
+	if x != nil {
+		return x.LogIndex
+	}
+	return 0
+}
+
+type BankingWithdrawals struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Withdrawals []*Withdrawal `protobuf:"bytes,1,rep,name=withdrawals,proto3" json:"withdrawals,omitempty"`
+}
+
+func (x *BankingWithdrawals) Reset() {
+	*x = BankingWithdrawals{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[12]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BankingWithdrawals) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BankingWithdrawals) ProtoMessage() {}
+
+func (x *BankingWithdrawals) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[12]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BankingWithdrawals.ProtoReflect.Descriptor instead.
+func (*BankingWithdrawals) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *BankingWithdrawals) GetWithdrawals() []*Withdrawal {
+	if x != nil {
+		return x.Withdrawals
+	}
+	return nil
+}
+
+type BankingDeposits struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Deposit []*Deposit `protobuf:"bytes,1,rep,name=deposit,proto3" json:"deposit,omitempty"`
+}
+
+func (x *BankingDeposits) Reset() {
+	*x = BankingDeposits{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[13]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BankingDeposits) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BankingDeposits) ProtoMessage() {}
+
+func (x *BankingDeposits) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[13]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BankingDeposits.ProtoReflect.Descriptor instead.
+func (*BankingDeposits) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *BankingDeposits) GetDeposit() []*Deposit {
+	if x != nil {
+		return x.Deposit
+	}
+	return nil
+}
+
+type BankingSeen struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Refs []*TxRef `protobuf:"bytes,1,rep,name=refs,proto3" json:"refs,omitempty"`
+}
+
+func (x *BankingSeen) Reset() {
+	*x = BankingSeen{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[14]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BankingSeen) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BankingSeen) ProtoMessage() {}
+
+func (x *BankingSeen) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[14]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BankingSeen.ProtoReflect.Descriptor instead.
+func (*BankingSeen) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *BankingSeen) GetRefs() []*TxRef {
+	if x != nil {
+		return x.Refs
+	}
+	return nil
+}
+
 type Checkpoint struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Governance        []byte `protobuf:"bytes,1,opt,name=governance,proto3" json:"governance,omitempty"`
-	Assets            []byte `protobuf:"bytes,2,opt,name=assets,proto3" json:"assets,omitempty"`
-	Collateral        []byte `protobuf:"bytes,3,opt,name=collateral,proto3" json:"collateral,omitempty"`
-	NetworkParameters []byte `protobuf:"bytes,4,opt,name=network_parameters,json=networkParameters,proto3" json:"network_parameters,omitempty"`
-	Delegation        []byte `protobuf:"bytes,5,opt,name=delegation,proto3" json:"delegation,omitempty"`
-	Epoch             []byte `protobuf:"bytes,6,opt,name=epoch,proto3" json:"epoch,omitempty"` // will just be an epoch event
-	Block             []byte `protobuf:"bytes,7,opt,name=block,proto3" json:"block,omitempty"`
+	NextCp int64 `protobuf:"varint,1,opt,name=next_cp,json=nextCp,proto3" json:"next_cp,omitempty"`
 }
 
 func (x *Checkpoint) Reset() {
 	*x = Checkpoint{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[1]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[15]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -114,7 +1228,7 @@ func (x *Checkpoint) String() string {
 func (*Checkpoint) ProtoMessage() {}
 
 func (x *Checkpoint) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[1]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[15]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -127,85 +1241,41 @@ func (x *Checkpoint) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Checkpoint.ProtoReflect.Descriptor instead.
 func (*Checkpoint) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{1}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{15}
 }
 
-func (x *Checkpoint) GetGovernance() []byte {
+func (x *Checkpoint) GetNextCp() int64 {
 	if x != nil {
-		return x.Governance
+		return x.NextCp
 	}
-	return nil
+	return 0
 }
 
-func (x *Checkpoint) GetAssets() []byte {
-	if x != nil {
-		return x.Assets
-	}
-	return nil
-}
-
-func (x *Checkpoint) GetCollateral() []byte {
-	if x != nil {
-		return x.Collateral
-	}
-	return nil
-}
-
-func (x *Checkpoint) GetNetworkParameters() []byte {
-	if x != nil {
-		return x.NetworkParameters
-	}
-	return nil
-}
-
-func (x *Checkpoint) GetDelegation() []byte {
-	if x != nil {
-		return x.Delegation
-	}
-	return nil
-}
-
-func (x *Checkpoint) GetEpoch() []byte {
-	if x != nil {
-		return x.Epoch
-	}
-	return nil
-}
-
-func (x *Checkpoint) GetBlock() []byte {
-	if x != nil {
-		return x.Block
-	}
-	return nil
-}
-
-// AssetEntrty is a single (enabled) asset
-type AssetEntry struct {
+type DelegationActive struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id           string             `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	AssetDetails *vega.AssetDetails `protobuf:"bytes,2,opt,name=asset_details,json=assetDetails,proto3" json:"asset_details,omitempty"`
+	Delegations []*vega.Delegation `protobuf:"bytes,1,rep,name=delegations,proto3" json:"delegations,omitempty"`
 }
 
-func (x *AssetEntry) Reset() {
-	*x = AssetEntry{}
+func (x *DelegationActive) Reset() {
+	*x = DelegationActive{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[2]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *AssetEntry) String() string {
+func (x *DelegationActive) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AssetEntry) ProtoMessage() {}
+func (*DelegationActive) ProtoMessage() {}
 
-func (x *AssetEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[2]
+func (x *DelegationActive) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -216,51 +1286,44 @@ func (x *AssetEntry) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AssetEntry.ProtoReflect.Descriptor instead.
-func (*AssetEntry) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{2}
+// Deprecated: Use DelegationActive.ProtoReflect.Descriptor instead.
+func (*DelegationActive) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{16}
 }
 
-func (x *AssetEntry) GetId() string {
+func (x *DelegationActive) GetDelegations() []*vega.Delegation {
 	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-func (x *AssetEntry) GetAssetDetails() *vega.AssetDetails {
-	if x != nil {
-		return x.AssetDetails
+		return x.Delegations
 	}
 	return nil
 }
 
-// Assets contains all the enabled assets as AssetEntries
-type Assets struct {
+type DelegationPending struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Assets []*AssetEntry `protobuf:"bytes,1,rep,name=assets,proto3" json:"assets,omitempty"`
+	Delegations  []*vega.Delegation `protobuf:"bytes,1,rep,name=delegations,proto3" json:"delegations,omitempty"`
+	Undelegation []*vega.Delegation `protobuf:"bytes,2,rep,name=undelegation,proto3" json:"undelegation,omitempty"`
 }
 
-func (x *Assets) Reset() {
-	*x = Assets{}
+func (x *DelegationPending) Reset() {
+	*x = DelegationPending{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[3]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *Assets) String() string {
+func (x *DelegationPending) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Assets) ProtoMessage() {}
+func (*DelegationPending) ProtoMessage() {}
 
-func (x *Assets) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[3]
+func (x *DelegationPending) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -271,46 +1334,50 @@ func (x *Assets) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Assets.ProtoReflect.Descriptor instead.
-func (*Assets) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{3}
+// Deprecated: Use DelegationPending.ProtoReflect.Descriptor instead.
+func (*DelegationPending) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{17}
 }
 
-func (x *Assets) GetAssets() []*AssetEntry {
+func (x *DelegationPending) GetDelegations() []*vega.Delegation {
 	if x != nil {
-		return x.Assets
+		return x.Delegations
 	}
 	return nil
 }
 
-// AssetBalance represents the total balance of a given asset for a party
-type AssetBalance struct {
+func (x *DelegationPending) GetUndelegation() []*vega.Delegation {
+	if x != nil {
+		return x.Undelegation
+	}
+	return nil
+}
+
+type DelegationAuto struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Party   string `protobuf:"bytes,1,opt,name=party,proto3" json:"party,omitempty"`
-	Asset   string `protobuf:"bytes,2,opt,name=asset,proto3" json:"asset,omitempty"`
-	Balance string `protobuf:"bytes,3,opt,name=balance,proto3" json:"balance,omitempty"`
+	Parties []string `protobuf:"bytes,1,rep,name=parties,proto3" json:"parties,omitempty"`
 }
 
-func (x *AssetBalance) Reset() {
-	*x = AssetBalance{}
+func (x *DelegationAuto) Reset() {
+	*x = DelegationAuto{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[4]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *AssetBalance) String() string {
+func (x *DelegationAuto) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AssetBalance) ProtoMessage() {}
+func (*DelegationAuto) ProtoMessage() {}
 
-func (x *AssetBalance) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[4]
+func (x *DelegationAuto) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -321,58 +1388,271 @@ func (x *AssetBalance) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AssetBalance.ProtoReflect.Descriptor instead.
-func (*AssetBalance) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{4}
+// Deprecated: Use DelegationAuto.ProtoReflect.Descriptor instead.
+func (*DelegationAuto) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{18}
 }
 
-func (x *AssetBalance) GetParty() string {
+func (x *DelegationAuto) GetParties() []string {
+	if x != nil {
+		return x.Parties
+	}
+	return nil
+}
+
+type PendingProposal struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Proposal *vega.Proposal `protobuf:"bytes,1,opt,name=proposal,proto3" json:"proposal,omitempty"`
+	Yes      []*vega.Vote   `protobuf:"bytes,2,rep,name=yes,proto3" json:"yes,omitempty"`
+	No       []*vega.Vote   `protobuf:"bytes,3,rep,name=no,proto3" json:"no,omitempty"`
+	Invalid  []*vega.Vote   `protobuf:"bytes,4,rep,name=invalid,proto3" json:"invalid,omitempty"`
+}
+
+func (x *PendingProposal) Reset() {
+	*x = PendingProposal{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[19]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PendingProposal) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PendingProposal) ProtoMessage() {}
+
+func (x *PendingProposal) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[19]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PendingProposal.ProtoReflect.Descriptor instead.
+func (*PendingProposal) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *PendingProposal) GetProposal() *vega.Proposal {
+	if x != nil {
+		return x.Proposal
+	}
+	return nil
+}
+
+func (x *PendingProposal) GetYes() []*vega.Vote {
+	if x != nil {
+		return x.Yes
+	}
+	return nil
+}
+
+func (x *PendingProposal) GetNo() []*vega.Vote {
+	if x != nil {
+		return x.No
+	}
+	return nil
+}
+
+func (x *PendingProposal) GetInvalid() []*vega.Vote {
+	if x != nil {
+		return x.Invalid
+	}
+	return nil
+}
+
+type GovernanceEnacted struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Proposals []*vega.Proposal `protobuf:"bytes,1,rep,name=proposals,proto3" json:"proposals,omitempty"`
+}
+
+func (x *GovernanceEnacted) Reset() {
+	*x = GovernanceEnacted{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[20]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GovernanceEnacted) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GovernanceEnacted) ProtoMessage() {}
+
+func (x *GovernanceEnacted) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[20]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GovernanceEnacted.ProtoReflect.Descriptor instead.
+func (*GovernanceEnacted) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *GovernanceEnacted) GetProposals() []*vega.Proposal {
+	if x != nil {
+		return x.Proposals
+	}
+	return nil
+}
+
+type GovernanceActive struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Proposals []*PendingProposal `protobuf:"bytes,1,rep,name=proposals,proto3" json:"proposals,omitempty"`
+}
+
+func (x *GovernanceActive) Reset() {
+	*x = GovernanceActive{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[21]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GovernanceActive) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GovernanceActive) ProtoMessage() {}
+
+func (x *GovernanceActive) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[21]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GovernanceActive.ProtoReflect.Descriptor instead.
+func (*GovernanceActive) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *GovernanceActive) GetProposals() []*PendingProposal {
+	if x != nil {
+		return x.Proposals
+	}
+	return nil
+}
+
+type StakingAccount struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Party   string             `protobuf:"bytes,1,opt,name=party,proto3" json:"party,omitempty"`
+	Balance string             `protobuf:"bytes,2,opt,name=balance,proto3" json:"balance,omitempty"`
+	Events  []*v1.StakeLinking `protobuf:"bytes,3,rep,name=events,proto3" json:"events,omitempty"`
+}
+
+func (x *StakingAccount) Reset() {
+	*x = StakingAccount{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[22]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *StakingAccount) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StakingAccount) ProtoMessage() {}
+
+func (x *StakingAccount) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[22]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StakingAccount.ProtoReflect.Descriptor instead.
+func (*StakingAccount) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *StakingAccount) GetParty() string {
 	if x != nil {
 		return x.Party
 	}
 	return ""
 }
 
-func (x *AssetBalance) GetAsset() string {
-	if x != nil {
-		return x.Asset
-	}
-	return ""
-}
-
-func (x *AssetBalance) GetBalance() string {
+func (x *StakingAccount) GetBalance() string {
 	if x != nil {
 		return x.Balance
 	}
 	return ""
 }
 
-// Collateral contains the balances per party
-type Collateral struct {
+func (x *StakingAccount) GetEvents() []*v1.StakeLinking {
+	if x != nil {
+		return x.Events
+	}
+	return nil
+}
+
+type StakingAccounts struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Balances []*AssetBalance `protobuf:"bytes,1,rep,name=balances,proto3" json:"balances,omitempty"`
+	Accounts []*StakingAccount `protobuf:"bytes,1,rep,name=accounts,proto3" json:"accounts,omitempty"`
 }
 
-func (x *Collateral) Reset() {
-	*x = Collateral{}
+func (x *StakingAccounts) Reset() {
+	*x = StakingAccounts{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[5]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[23]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *Collateral) String() string {
+func (x *StakingAccounts) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Collateral) ProtoMessage() {}
+func (*StakingAccounts) ProtoMessage() {}
 
-func (x *Collateral) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[5]
+func (x *StakingAccounts) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[23]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -383,19 +1663,81 @@ func (x *Collateral) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Collateral.ProtoReflect.Descriptor instead.
-func (*Collateral) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{5}
+// Deprecated: Use StakingAccounts.ProtoReflect.Descriptor instead.
+func (*StakingAccounts) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{23}
 }
 
-func (x *Collateral) GetBalances() []*AssetBalance {
+func (x *StakingAccounts) GetAccounts() []*StakingAccount {
 	if x != nil {
-		return x.Balances
+		return x.Accounts
 	}
 	return nil
 }
 
-// NetParams contains all network parameters
+type MatchingBook struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	MarketId string        `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
+	Buy      []*vega.Order `protobuf:"bytes,2,rep,name=buy,proto3" json:"buy,omitempty"`
+	Sell     []*vega.Order `protobuf:"bytes,3,rep,name=sell,proto3" json:"sell,omitempty"`
+}
+
+func (x *MatchingBook) Reset() {
+	*x = MatchingBook{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[24]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MatchingBook) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MatchingBook) ProtoMessage() {}
+
+func (x *MatchingBook) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[24]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MatchingBook.ProtoReflect.Descriptor instead.
+func (*MatchingBook) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *MatchingBook) GetMarketId() string {
+	if x != nil {
+		return x.MarketId
+	}
+	return ""
+}
+
+func (x *MatchingBook) GetBuy() []*vega.Order {
+	if x != nil {
+		return x.Buy
+	}
+	return nil
+}
+
+func (x *MatchingBook) GetSell() []*vega.Order {
+	if x != nil {
+		return x.Sell
+	}
+	return nil
+}
+
 type NetParams struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -407,7 +1749,7 @@ type NetParams struct {
 func (x *NetParams) Reset() {
 	*x = NetParams{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[6]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[25]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -420,7 +1762,7 @@ func (x *NetParams) String() string {
 func (*NetParams) ProtoMessage() {}
 
 func (x *NetParams) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[6]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[25]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -433,7 +1775,7 @@ func (x *NetParams) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NetParams.ProtoReflect.Descriptor instead.
 func (*NetParams) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{6}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *NetParams) GetParams() []*vega.NetworkParameter {
@@ -443,32 +1785,32 @@ func (x *NetParams) GetParams() []*vega.NetworkParameter {
 	return nil
 }
 
-// Proposals will contain all accepted proposals
-type Proposals struct {
+type DecimalMap struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Proposals []*vega.Proposal `protobuf:"bytes,1,rep,name=proposals,proto3" json:"proposals,omitempty"`
+	Key int64  `protobuf:"varint,1,opt,name=key,proto3" json:"key,omitempty"`
+	Val string `protobuf:"bytes,2,opt,name=val,proto3" json:"val,omitempty"`
 }
 
-func (x *Proposals) Reset() {
-	*x = Proposals{}
+func (x *DecimalMap) Reset() {
+	*x = DecimalMap{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[7]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[26]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *Proposals) String() string {
+func (x *DecimalMap) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Proposals) ProtoMessage() {}
+func (*DecimalMap) ProtoMessage() {}
 
-func (x *Proposals) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[7]
+func (x *DecimalMap) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[26]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -479,49 +1821,51 @@ func (x *Proposals) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Proposals.ProtoReflect.Descriptor instead.
-func (*Proposals) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{7}
+// Deprecated: Use DecimalMap.ProtoReflect.Descriptor instead.
+func (*DecimalMap) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{26}
 }
 
-func (x *Proposals) GetProposals() []*vega.Proposal {
+func (x *DecimalMap) GetKey() int64 {
 	if x != nil {
-		return x.Proposals
+		return x.Key
 	}
-	return nil
+	return 0
 }
 
-// Delegated amounts for party/node
-// undelegate and epoch seq are only relevant for pending entries
-type DelegateEntry struct {
+func (x *DecimalMap) GetVal() string {
+	if x != nil {
+		return x.Val
+	}
+	return ""
+}
+
+type TimePrice struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Party      string `protobuf:"bytes,1,opt,name=party,proto3" json:"party,omitempty"`
-	Node       string `protobuf:"bytes,2,opt,name=node,proto3" json:"node,omitempty"`
-	Amount     string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
-	Undelegate bool   `protobuf:"varint,4,opt,name=undelegate,proto3" json:"undelegate,omitempty"`
-	EpochSeq   uint64 `protobuf:"varint,5,opt,name=epoch_seq,json=epochSeq,proto3" json:"epoch_seq,omitempty"`
+	Time  int64  `protobuf:"varint,1,opt,name=time,proto3" json:"time,omitempty"`
+	Price string `protobuf:"bytes,2,opt,name=price,proto3" json:"price,omitempty"`
 }
 
-func (x *DelegateEntry) Reset() {
-	*x = DelegateEntry{}
+func (x *TimePrice) Reset() {
+	*x = TimePrice{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[8]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[27]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *DelegateEntry) String() string {
+func (x *TimePrice) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DelegateEntry) ProtoMessage() {}
+func (*TimePrice) ProtoMessage() {}
 
-func (x *DelegateEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[8]
+func (x *TimePrice) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[27]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -532,73 +1876,412 @@ func (x *DelegateEntry) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DelegateEntry.ProtoReflect.Descriptor instead.
-func (*DelegateEntry) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{8}
+// Deprecated: Use TimePrice.ProtoReflect.Descriptor instead.
+func (*TimePrice) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{27}
 }
 
-func (x *DelegateEntry) GetParty() string {
+func (x *TimePrice) GetTime() int64 {
 	if x != nil {
-		return x.Party
+		return x.Time
+	}
+	return 0
+}
+
+func (x *TimePrice) GetPrice() string {
+	if x != nil {
+		return x.Price
 	}
 	return ""
 }
 
-func (x *DelegateEntry) GetNode() string {
+type PriceVolume struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Price  string `protobuf:"bytes,1,opt,name=price,proto3" json:"price,omitempty"`
+	Volume uint64 `protobuf:"varint,2,opt,name=volume,proto3" json:"volume,omitempty"`
+}
+
+func (x *PriceVolume) Reset() {
+	*x = PriceVolume{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[28]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PriceVolume) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PriceVolume) ProtoMessage() {}
+
+func (x *PriceVolume) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[28]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PriceVolume.ProtoReflect.Descriptor instead.
+func (*PriceVolume) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *PriceVolume) GetPrice() string {
 	if x != nil {
-		return x.Node
+		return x.Price
 	}
 	return ""
 }
 
-func (x *DelegateEntry) GetAmount() string {
+func (x *PriceVolume) GetVolume() uint64 {
 	if x != nil {
-		return x.Amount
+		return x.Volume
+	}
+	return 0
+}
+
+type PriceRange struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Min string `protobuf:"bytes,1,opt,name=min,proto3" json:"min,omitempty"`
+	Max string `protobuf:"bytes,2,opt,name=max,proto3" json:"max,omitempty"`
+	Ref string `protobuf:"bytes,3,opt,name=ref,proto3" json:"ref,omitempty"`
+}
+
+func (x *PriceRange) Reset() {
+	*x = PriceRange{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[29]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PriceRange) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PriceRange) ProtoMessage() {}
+
+func (x *PriceRange) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[29]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PriceRange.ProtoReflect.Descriptor instead.
+func (*PriceRange) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *PriceRange) GetMin() string {
+	if x != nil {
+		return x.Min
 	}
 	return ""
 }
 
-func (x *DelegateEntry) GetUndelegate() bool {
+func (x *PriceRange) GetMax() string {
 	if x != nil {
-		return x.Undelegate
+		return x.Max
+	}
+	return ""
+}
+
+func (x *PriceRange) GetRef() string {
+	if x != nil {
+		return x.Ref
+	}
+	return ""
+}
+
+type PriceBound struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Active     bool                         `protobuf:"varint,1,opt,name=active,proto3" json:"active,omitempty"`
+	UpFactor   string                       `protobuf:"bytes,2,opt,name=up_factor,json=upFactor,proto3" json:"up_factor,omitempty"`
+	DownFactor string                       `protobuf:"bytes,3,opt,name=down_factor,json=downFactor,proto3" json:"down_factor,omitempty"`
+	Trigger    *vega.PriceMonitoringTrigger `protobuf:"bytes,4,opt,name=trigger,proto3" json:"trigger,omitempty"`
+}
+
+func (x *PriceBound) Reset() {
+	*x = PriceBound{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[30]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PriceBound) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PriceBound) ProtoMessage() {}
+
+func (x *PriceBound) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[30]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PriceBound.ProtoReflect.Descriptor instead.
+func (*PriceBound) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *PriceBound) GetActive() bool {
+	if x != nil {
+		return x.Active
 	}
 	return false
 }
 
-func (x *DelegateEntry) GetEpochSeq() uint64 {
+func (x *PriceBound) GetUpFactor() string {
 	if x != nil {
-		return x.EpochSeq
+		return x.UpFactor
+	}
+	return ""
+}
+
+func (x *PriceBound) GetDownFactor() string {
+	if x != nil {
+		return x.DownFactor
+	}
+	return ""
+}
+
+func (x *PriceBound) GetTrigger() *vega.PriceMonitoringTrigger {
+	if x != nil {
+		return x.Trigger
+	}
+	return nil
+}
+
+type PriceRangeCache struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Bound *PriceBound `protobuf:"bytes,1,opt,name=bound,proto3" json:"bound,omitempty"`
+	Range *PriceRange `protobuf:"bytes,2,opt,name=range,proto3" json:"range,omitempty"`
+}
+
+func (x *PriceRangeCache) Reset() {
+	*x = PriceRangeCache{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[31]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PriceRangeCache) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PriceRangeCache) ProtoMessage() {}
+
+func (x *PriceRangeCache) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[31]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PriceRangeCache.ProtoReflect.Descriptor instead.
+func (*PriceRangeCache) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *PriceRangeCache) GetBound() *PriceBound {
+	if x != nil {
+		return x.Bound
+	}
+	return nil
+}
+
+func (x *PriceRangeCache) GetRange() *PriceRange {
+	if x != nil {
+		return x.Range
+	}
+	return nil
+}
+
+type PriceMonitor struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Initialised         bool               `protobuf:"varint,3,opt,name=initialised,proto3" json:"initialised,omitempty"`
+	FpHorizons          []*DecimalMap      `protobuf:"bytes,4,rep,name=fp_horizons,json=fpHorizons,proto3" json:"fp_horizons,omitempty"`
+	Now                 int64              `protobuf:"varint,5,opt,name=now,proto3" json:"now,omitempty"`
+	Update              int64              `protobuf:"varint,6,opt,name=update,proto3" json:"update,omitempty"`
+	Bounds              []*PriceBound      `protobuf:"bytes,7,rep,name=bounds,proto3" json:"bounds,omitempty"`
+	PriceRangeCacheTime int64              `protobuf:"varint,8,opt,name=price_range_cache_time,json=priceRangeCacheTime,proto3" json:"price_range_cache_time,omitempty"`
+	PriceRangeCache     []*PriceRangeCache `protobuf:"bytes,9,rep,name=price_range_cache,json=priceRangeCache,proto3" json:"price_range_cache,omitempty"`
+	RefPriceCacheTime   int64              `protobuf:"varint,10,opt,name=ref_price_cache_time,json=refPriceCacheTime,proto3" json:"ref_price_cache_time,omitempty"`
+	RefPriceCache       []*DecimalMap      `protobuf:"bytes,11,rep,name=ref_price_cache,json=refPriceCache,proto3" json:"ref_price_cache,omitempty"`
+}
+
+func (x *PriceMonitor) Reset() {
+	*x = PriceMonitor{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[32]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PriceMonitor) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PriceMonitor) ProtoMessage() {}
+
+func (x *PriceMonitor) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[32]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PriceMonitor.ProtoReflect.Descriptor instead.
+func (*PriceMonitor) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *PriceMonitor) GetInitialised() bool {
+	if x != nil {
+		return x.Initialised
+	}
+	return false
+}
+
+func (x *PriceMonitor) GetFpHorizons() []*DecimalMap {
+	if x != nil {
+		return x.FpHorizons
+	}
+	return nil
+}
+
+func (x *PriceMonitor) GetNow() int64 {
+	if x != nil {
+		return x.Now
 	}
 	return 0
 }
 
-// Delegate contains all entries for a checkpoint
-type Delegate struct {
+func (x *PriceMonitor) GetUpdate() int64 {
+	if x != nil {
+		return x.Update
+	}
+	return 0
+}
+
+func (x *PriceMonitor) GetBounds() []*PriceBound {
+	if x != nil {
+		return x.Bounds
+	}
+	return nil
+}
+
+func (x *PriceMonitor) GetPriceRangeCacheTime() int64 {
+	if x != nil {
+		return x.PriceRangeCacheTime
+	}
+	return 0
+}
+
+func (x *PriceMonitor) GetPriceRangeCache() []*PriceRangeCache {
+	if x != nil {
+		return x.PriceRangeCache
+	}
+	return nil
+}
+
+func (x *PriceMonitor) GetRefPriceCacheTime() int64 {
+	if x != nil {
+		return x.RefPriceCacheTime
+	}
+	return 0
+}
+
+func (x *PriceMonitor) GetRefPriceCache() []*DecimalMap {
+	if x != nil {
+		return x.RefPriceCache
+	}
+	return nil
+}
+
+type AuctionState struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Active  []*DelegateEntry `protobuf:"bytes,1,rep,name=active,proto3" json:"active,omitempty"`
-	Pending []*DelegateEntry `protobuf:"bytes,2,rep,name=pending,proto3" json:"pending,omitempty"`
+	Mode        vega.Market_TradingMode `protobuf:"varint,1,opt,name=mode,proto3,enum=vega.Market_TradingMode" json:"mode,omitempty"`
+	DefaultMode vega.Market_TradingMode `protobuf:"varint,2,opt,name=default_mode,json=defaultMode,proto3,enum=vega.Market_TradingMode" json:"default_mode,omitempty"`
+	Trigger     vega.AuctionTrigger     `protobuf:"varint,3,opt,name=trigger,proto3,enum=vega.AuctionTrigger" json:"trigger,omitempty"`
+	Begin       int64                   `protobuf:"varint,4,opt,name=begin,proto3" json:"begin,omitempty"`
+	End         *vega.AuctionDuration   `protobuf:"bytes,5,opt,name=end,proto3" json:"end,omitempty"`
+	Start       bool                    `protobuf:"varint,6,opt,name=start,proto3" json:"start,omitempty"`
+	Stop        bool                    `protobuf:"varint,7,opt,name=stop,proto3" json:"stop,omitempty"`
+	Extension   vega.AuctionTrigger     `protobuf:"varint,8,opt,name=extension,proto3,enum=vega.AuctionTrigger" json:"extension,omitempty"`
 }
 
-func (x *Delegate) Reset() {
-	*x = Delegate{}
+func (x *AuctionState) Reset() {
+	*x = AuctionState{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[9]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[33]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *Delegate) String() string {
+func (x *AuctionState) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Delegate) ProtoMessage() {}
+func (*AuctionState) ProtoMessage() {}
 
-func (x *Delegate) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[9]
+func (x *AuctionState) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[33]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -609,52 +2292,95 @@ func (x *Delegate) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Delegate.ProtoReflect.Descriptor instead.
-func (*Delegate) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{9}
+// Deprecated: Use AuctionState.ProtoReflect.Descriptor instead.
+func (*AuctionState) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{33}
 }
 
-func (x *Delegate) GetActive() []*DelegateEntry {
+func (x *AuctionState) GetMode() vega.Market_TradingMode {
 	if x != nil {
-		return x.Active
+		return x.Mode
+	}
+	return vega.Market_TRADING_MODE_UNSPECIFIED
+}
+
+func (x *AuctionState) GetDefaultMode() vega.Market_TradingMode {
+	if x != nil {
+		return x.DefaultMode
+	}
+	return vega.Market_TRADING_MODE_UNSPECIFIED
+}
+
+func (x *AuctionState) GetTrigger() vega.AuctionTrigger {
+	if x != nil {
+		return x.Trigger
+	}
+	return vega.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED
+}
+
+func (x *AuctionState) GetBegin() int64 {
+	if x != nil {
+		return x.Begin
+	}
+	return 0
+}
+
+func (x *AuctionState) GetEnd() *vega.AuctionDuration {
+	if x != nil {
+		return x.End
 	}
 	return nil
 }
 
-func (x *Delegate) GetPending() []*DelegateEntry {
+func (x *AuctionState) GetStart() bool {
 	if x != nil {
-		return x.Pending
+		return x.Start
 	}
-	return nil
+	return false
 }
 
-// Block message contains data related to block at which the checkpoint
-// was created (ie block height)
-type Block struct {
+func (x *AuctionState) GetStop() bool {
+	if x != nil {
+		return x.Stop
+	}
+	return false
+}
+
+func (x *AuctionState) GetExtension() vega.AuctionTrigger {
+	if x != nil {
+		return x.Extension
+	}
+	return vega.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED
+}
+
+type EquityShareLP struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Height int64 `protobuf:"varint,1,opt,name=height,proto3" json:"height,omitempty"`
+	Id    string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Stake string `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`
+	Share string `protobuf:"bytes,3,opt,name=share,proto3" json:"share,omitempty"`
+	Avg   string `protobuf:"bytes,4,opt,name=avg,proto3" json:"avg,omitempty"`
 }
 
-func (x *Block) Reset() {
-	*x = Block{}
+func (x *EquityShareLP) Reset() {
+	*x = EquityShareLP{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[10]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[34]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *Block) String() string {
+func (x *EquityShareLP) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Block) ProtoMessage() {}
+func (*EquityShareLP) ProtoMessage() {}
 
-func (x *Block) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[10]
+func (x *EquityShareLP) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[34]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -665,16 +2391,588 @@ func (x *Block) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Block.ProtoReflect.Descriptor instead.
-func (*Block) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{10}
+// Deprecated: Use EquityShareLP.ProtoReflect.Descriptor instead.
+func (*EquityShareLP) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{34}
 }
 
-func (x *Block) GetHeight() int64 {
+func (x *EquityShareLP) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *EquityShareLP) GetStake() string {
+	if x != nil {
+		return x.Stake
+	}
+	return ""
+}
+
+func (x *EquityShareLP) GetShare() string {
+	if x != nil {
+		return x.Share
+	}
+	return ""
+}
+
+func (x *EquityShareLP) GetAvg() string {
+	if x != nil {
+		return x.Avg
+	}
+	return ""
+}
+
+type EquityShare struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Mvp                 string           `protobuf:"bytes,1,opt,name=mvp,proto3" json:"mvp,omitempty"`
+	OpeningAuctionEnded bool             `protobuf:"varint,2,opt,name=opening_auction_ended,json=openingAuctionEnded,proto3" json:"opening_auction_ended,omitempty"`
+	Lps                 []*EquityShareLP `protobuf:"bytes,3,rep,name=lps,proto3" json:"lps,omitempty"`
+}
+
+func (x *EquityShare) Reset() {
+	*x = EquityShare{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[35]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *EquityShare) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EquityShare) ProtoMessage() {}
+
+func (x *EquityShare) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[35]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EquityShare.ProtoReflect.Descriptor instead.
+func (*EquityShare) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *EquityShare) GetMvp() string {
+	if x != nil {
+		return x.Mvp
+	}
+	return ""
+}
+
+func (x *EquityShare) GetOpeningAuctionEnded() bool {
+	if x != nil {
+		return x.OpeningAuctionEnded
+	}
+	return false
+}
+
+func (x *EquityShare) GetLps() []*EquityShareLP {
+	if x != nil {
+		return x.Lps
+	}
+	return nil
+}
+
+type Market struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Market                     *vega.Market  `protobuf:"bytes,1,opt,name=market,proto3" json:"market,omitempty"`
+	PriceMonitor               *PriceMonitor `protobuf:"bytes,2,opt,name=price_monitor,json=priceMonitor,proto3" json:"price_monitor,omitempty"`
+	AuctionState               *AuctionState `protobuf:"bytes,3,opt,name=auction_state,json=auctionState,proto3" json:"auction_state,omitempty"`
+	PeggedOrders               []*vega.Order `protobuf:"bytes,4,rep,name=pegged_orders,json=peggedOrders,proto3" json:"pegged_orders,omitempty"`
+	ExpiringOrders             []*vega.Order `protobuf:"bytes,5,rep,name=expiring_orders,json=expiringOrders,proto3" json:"expiring_orders,omitempty"`
+	LastBestBid                string        `protobuf:"bytes,6,opt,name=last_best_bid,json=lastBestBid,proto3" json:"last_best_bid,omitempty"`
+	LastBestAsk                string        `protobuf:"bytes,7,opt,name=last_best_ask,json=lastBestAsk,proto3" json:"last_best_ask,omitempty"`
+	LastMidBid                 string        `protobuf:"bytes,8,opt,name=last_mid_bid,json=lastMidBid,proto3" json:"last_mid_bid,omitempty"`
+	LastMidAsk                 string        `protobuf:"bytes,9,opt,name=last_mid_ask,json=lastMidAsk,proto3" json:"last_mid_ask,omitempty"`
+	LastMarketValueProxy       string        `protobuf:"bytes,10,opt,name=last_market_value_proxy,json=lastMarketValueProxy,proto3" json:"last_market_value_proxy,omitempty"`
+	LastEquityShareDistributed int64         `protobuf:"varint,11,opt,name=last_equity_share_distributed,json=lastEquityShareDistributed,proto3" json:"last_equity_share_distributed,omitempty"`
+	EquityShare                *EquityShare  `protobuf:"bytes,12,opt,name=equity_share,json=equityShare,proto3" json:"equity_share,omitempty"`
+	CurrentMarkPrice           string        `protobuf:"bytes,13,opt,name=current_mark_price,json=currentMarkPrice,proto3" json:"current_mark_price,omitempty"`
+}
+
+func (x *Market) Reset() {
+	*x = Market{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[36]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Market) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Market) ProtoMessage() {}
+
+func (x *Market) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[36]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Market.ProtoReflect.Descriptor instead.
+func (*Market) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *Market) GetMarket() *vega.Market {
+	if x != nil {
+		return x.Market
+	}
+	return nil
+}
+
+func (x *Market) GetPriceMonitor() *PriceMonitor {
+	if x != nil {
+		return x.PriceMonitor
+	}
+	return nil
+}
+
+func (x *Market) GetAuctionState() *AuctionState {
+	if x != nil {
+		return x.AuctionState
+	}
+	return nil
+}
+
+func (x *Market) GetPeggedOrders() []*vega.Order {
+	if x != nil {
+		return x.PeggedOrders
+	}
+	return nil
+}
+
+func (x *Market) GetExpiringOrders() []*vega.Order {
+	if x != nil {
+		return x.ExpiringOrders
+	}
+	return nil
+}
+
+func (x *Market) GetLastBestBid() string {
+	if x != nil {
+		return x.LastBestBid
+	}
+	return ""
+}
+
+func (x *Market) GetLastBestAsk() string {
+	if x != nil {
+		return x.LastBestAsk
+	}
+	return ""
+}
+
+func (x *Market) GetLastMidBid() string {
+	if x != nil {
+		return x.LastMidBid
+	}
+	return ""
+}
+
+func (x *Market) GetLastMidAsk() string {
+	if x != nil {
+		return x.LastMidAsk
+	}
+	return ""
+}
+
+func (x *Market) GetLastMarketValueProxy() string {
+	if x != nil {
+		return x.LastMarketValueProxy
+	}
+	return ""
+}
+
+func (x *Market) GetLastEquityShareDistributed() int64 {
+	if x != nil {
+		return x.LastEquityShareDistributed
+	}
+	return 0
+}
+
+func (x *Market) GetEquityShare() *EquityShare {
+	if x != nil {
+		return x.EquityShare
+	}
+	return nil
+}
+
+func (x *Market) GetCurrentMarkPrice() string {
+	if x != nil {
+		return x.CurrentMarkPrice
+	}
+	return ""
+}
+
+type ExecutionMarkets struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Markets []*Market `protobuf:"bytes,1,rep,name=markets,proto3" json:"markets,omitempty"`
+}
+
+func (x *ExecutionMarkets) Reset() {
+	*x = ExecutionMarkets{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[37]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ExecutionMarkets) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExecutionMarkets) ProtoMessage() {}
+
+func (x *ExecutionMarkets) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[37]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExecutionMarkets.ProtoReflect.Descriptor instead.
+func (*ExecutionMarkets) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *ExecutionMarkets) GetMarkets() []*Market {
+	if x != nil {
+		return x.Markets
+	}
+	return nil
+}
+
+type Position struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	PartyId     string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
+	Size        int64  `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
+	Buy         int64  `protobuf:"varint,3,opt,name=buy,proto3" json:"buy,omitempty"`
+	Sell        int64  `protobuf:"varint,4,opt,name=sell,proto3" json:"sell,omitempty"`
+	Price       string `protobuf:"bytes,5,opt,name=price,proto3" json:"price,omitempty"`
+	VwBuyPrice  string `protobuf:"bytes,6,opt,name=vw_buy_price,json=vwBuyPrice,proto3" json:"vw_buy_price,omitempty"`
+	VwSellPrice string `protobuf:"bytes,7,opt,name=vw_sell_price,json=vwSellPrice,proto3" json:"vw_sell_price,omitempty"`
+}
+
+func (x *Position) Reset() {
+	*x = Position{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[38]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Position) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Position) ProtoMessage() {}
+
+func (x *Position) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[38]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Position.ProtoReflect.Descriptor instead.
+func (*Position) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *Position) GetPartyId() string {
+	if x != nil {
+		return x.PartyId
+	}
+	return ""
+}
+
+func (x *Position) GetSize() int64 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
+}
+
+func (x *Position) GetBuy() int64 {
+	if x != nil {
+		return x.Buy
+	}
+	return 0
+}
+
+func (x *Position) GetSell() int64 {
+	if x != nil {
+		return x.Sell
+	}
+	return 0
+}
+
+func (x *Position) GetPrice() string {
+	if x != nil {
+		return x.Price
+	}
+	return ""
+}
+
+func (x *Position) GetVwBuyPrice() string {
+	if x != nil {
+		return x.VwBuyPrice
+	}
+	return ""
+}
+
+func (x *Position) GetVwSellPrice() string {
+	if x != nil {
+		return x.VwSellPrice
+	}
+	return ""
+}
+
+type MarketPositions struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	MarketId  string      `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
+	Positions []*Position `protobuf:"bytes,2,rep,name=positions,proto3" json:"positions,omitempty"`
+}
+
+func (x *MarketPositions) Reset() {
+	*x = MarketPositions{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[39]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MarketPositions) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MarketPositions) ProtoMessage() {}
+
+func (x *MarketPositions) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[39]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MarketPositions.ProtoReflect.Descriptor instead.
+func (*MarketPositions) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *MarketPositions) GetMarketId() string {
+	if x != nil {
+		return x.MarketId
+	}
+	return ""
+}
+
+func (x *MarketPositions) GetPositions() []*Position {
+	if x != nil {
+		return x.Positions
+	}
+	return nil
+}
+
+type AppState struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Height uint64 `protobuf:"varint,1,opt,name=height,proto3" json:"height,omitempty"`
+	Block  string `protobuf:"bytes,2,opt,name=block,proto3" json:"block,omitempty"`
+	Time   int64  `protobuf:"varint,3,opt,name=time,proto3" json:"time,omitempty"`
+}
+
+func (x *AppState) Reset() {
+	*x = AppState{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[40]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *AppState) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AppState) ProtoMessage() {}
+
+func (x *AppState) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[40]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AppState.ProtoReflect.Descriptor instead.
+func (*AppState) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *AppState) GetHeight() uint64 {
 	if x != nil {
 		return x.Height
 	}
 	return 0
+}
+
+func (x *AppState) GetBlock() string {
+	if x != nil {
+		return x.Block
+	}
+	return ""
+}
+
+func (x *AppState) GetTime() int64 {
+	if x != nil {
+		return x.Time
+	}
+	return 0
+}
+
+// EpochState details
+type EpochState struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Sequence number that increases by one each epoch
+	Seq uint64 `protobuf:"varint,1,opt,name=seq,proto3" json:"seq,omitempty"`
+	// What time did this epoch start
+	StartTime int64 `protobuf:"varint,3,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	// What time should this epoch end
+	ExpireTime int64 `protobuf:"varint,4,opt,name=expire_time,json=expireTime,proto3" json:"expire_time,omitempty"`
+	// Ready to start a new epoch
+	ReadyToStartNewEpoch bool `protobuf:"varint,6,opt,name=ready_to_start_new_epoch,json=readyToStartNewEpoch,proto3" json:"ready_to_start_new_epoch,omitempty"`
+	// Ready to end epoch
+	ReadyToEndEpoch bool `protobuf:"varint,7,opt,name=ready_to_end_epoch,json=readyToEndEpoch,proto3" json:"ready_to_end_epoch,omitempty"`
+}
+
+func (x *EpochState) Reset() {
+	*x = EpochState{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[41]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *EpochState) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EpochState) ProtoMessage() {}
+
+func (x *EpochState) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[41]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EpochState.ProtoReflect.Descriptor instead.
+func (*EpochState) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{41}
+}
+
+func (x *EpochState) GetSeq() uint64 {
+	if x != nil {
+		return x.Seq
+	}
+	return 0
+}
+
+func (x *EpochState) GetStartTime() int64 {
+	if x != nil {
+		return x.StartTime
+	}
+	return 0
+}
+
+func (x *EpochState) GetExpireTime() int64 {
+	if x != nil {
+		return x.ExpireTime
+	}
+	return 0
+}
+
+func (x *EpochState) GetReadyToStartNewEpoch() bool {
+	if x != nil {
+		return x.ReadyToStartNewEpoch
+	}
+	return false
+}
+
+func (x *EpochState) GetReadyToEndEpoch() bool {
+	if x != nil {
+		return x.ReadyToEndEpoch
+	}
+	return false
 }
 
 var File_vega_snapshot_v1_snapshot_proto protoreflect.FileDescriptor
@@ -684,77 +2982,434 @@ var file_vega_snapshot_v1_snapshot_proto_rawDesc = []byte{
 	0x76, 0x31, 0x2f, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x12, 0x10, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74,
 	0x2e, 0x76, 0x31, 0x1a, 0x0f, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x11, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x61, 0x73, 0x73, 0x65, 0x74,
-	0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x15, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x67, 0x6f,
-	0x76, 0x65, 0x72, 0x6e, 0x61, 0x6e, 0x63, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x34,
-	0x0a, 0x08, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x68, 0x61,
-	0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x68, 0x61, 0x73, 0x68, 0x12, 0x14,
-	0x0a, 0x05, 0x73, 0x74, 0x61, 0x74, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x05, 0x73,
-	0x74, 0x61, 0x74, 0x65, 0x22, 0xdf, 0x01, 0x0a, 0x0a, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x70, 0x6f,
-	0x69, 0x6e, 0x74, 0x12, 0x1e, 0x0a, 0x0a, 0x67, 0x6f, 0x76, 0x65, 0x72, 0x6e, 0x61, 0x6e, 0x63,
-	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0a, 0x67, 0x6f, 0x76, 0x65, 0x72, 0x6e, 0x61,
-	0x6e, 0x63, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x61, 0x73, 0x73, 0x65, 0x74, 0x73, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x0c, 0x52, 0x06, 0x61, 0x73, 0x73, 0x65, 0x74, 0x73, 0x12, 0x1e, 0x0a, 0x0a, 0x63,
-	0x6f, 0x6c, 0x6c, 0x61, 0x74, 0x65, 0x72, 0x61, 0x6c, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0c, 0x52,
-	0x0a, 0x63, 0x6f, 0x6c, 0x6c, 0x61, 0x74, 0x65, 0x72, 0x61, 0x6c, 0x12, 0x2d, 0x0a, 0x12, 0x6e,
-	0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x5f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x65, 0x74, 0x65, 0x72,
-	0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x11, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b,
-	0x50, 0x61, 0x72, 0x61, 0x6d, 0x65, 0x74, 0x65, 0x72, 0x73, 0x12, 0x1e, 0x0a, 0x0a, 0x64, 0x65,
-	0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0a,
-	0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x70,
-	0x6f, 0x63, 0x68, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68,
-	0x12, 0x14, 0x0a, 0x05, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0c, 0x52,
-	0x05, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x22, 0x55, 0x0a, 0x0a, 0x41, 0x73, 0x73, 0x65, 0x74, 0x45,
-	0x6e, 0x74, 0x72, 0x79, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x02, 0x69, 0x64, 0x12, 0x37, 0x0a, 0x0d, 0x61, 0x73, 0x73, 0x65, 0x74, 0x5f, 0x64, 0x65,
-	0x74, 0x61, 0x69, 0x6c, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x12, 0x2e, 0x76, 0x65,
-	0x67, 0x61, 0x2e, 0x41, 0x73, 0x73, 0x65, 0x74, 0x44, 0x65, 0x74, 0x61, 0x69, 0x6c, 0x73, 0x52,
-	0x0c, 0x61, 0x73, 0x73, 0x65, 0x74, 0x44, 0x65, 0x74, 0x61, 0x69, 0x6c, 0x73, 0x22, 0x3e, 0x0a,
-	0x06, 0x41, 0x73, 0x73, 0x65, 0x74, 0x73, 0x12, 0x34, 0x0a, 0x06, 0x61, 0x73, 0x73, 0x65, 0x74,
-	0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73,
-	0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x73, 0x73, 0x65, 0x74,
-	0x45, 0x6e, 0x74, 0x72, 0x79, 0x52, 0x06, 0x61, 0x73, 0x73, 0x65, 0x74, 0x73, 0x22, 0x54, 0x0a,
-	0x0c, 0x41, 0x73, 0x73, 0x65, 0x74, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x12, 0x14, 0x0a,
-	0x05, 0x70, 0x61, 0x72, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x70, 0x61,
-	0x72, 0x74, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x61, 0x73, 0x73, 0x65, 0x74, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x05, 0x61, 0x73, 0x73, 0x65, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x62, 0x61, 0x6c,
-	0x61, 0x6e, 0x63, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x62, 0x61, 0x6c, 0x61,
-	0x6e, 0x63, 0x65, 0x22, 0x48, 0x0a, 0x0a, 0x43, 0x6f, 0x6c, 0x6c, 0x61, 0x74, 0x65, 0x72, 0x61,
-	0x6c, 0x12, 0x3a, 0x0a, 0x08, 0x62, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x73, 0x18, 0x01, 0x20,
-	0x03, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73,
-	0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x73, 0x73, 0x65, 0x74, 0x42, 0x61, 0x6c, 0x61,
-	0x6e, 0x63, 0x65, 0x52, 0x08, 0x62, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x73, 0x22, 0x3b, 0x0a,
-	0x09, 0x4e, 0x65, 0x74, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x2e, 0x0a, 0x06, 0x70, 0x61,
-	0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x76, 0x65, 0x67,
-	0x61, 0x2e, 0x4e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x65, 0x74,
-	0x65, 0x72, 0x52, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x22, 0x39, 0x0a, 0x09, 0x50, 0x72,
-	0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x73, 0x12, 0x2c, 0x0a, 0x09, 0x70, 0x72, 0x6f, 0x70, 0x6f,
-	0x73, 0x61, 0x6c, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0e, 0x2e, 0x76, 0x65, 0x67,
-	0x61, 0x2e, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x52, 0x09, 0x70, 0x72, 0x6f, 0x70,
-	0x6f, 0x73, 0x61, 0x6c, 0x73, 0x22, 0x8e, 0x01, 0x0a, 0x0d, 0x44, 0x65, 0x6c, 0x65, 0x67, 0x61,
-	0x74, 0x65, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x70, 0x61, 0x72, 0x74, 0x79,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x70, 0x61, 0x72, 0x74, 0x79, 0x12, 0x12, 0x0a,
-	0x04, 0x6e, 0x6f, 0x64, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x6f, 0x64,
-	0x65, 0x12, 0x16, 0x0a, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x1e, 0x0a, 0x0a, 0x75, 0x6e, 0x64,
-	0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0a, 0x75,
-	0x6e, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x65, 0x12, 0x1b, 0x0a, 0x09, 0x65, 0x70, 0x6f,
-	0x63, 0x68, 0x5f, 0x73, 0x65, 0x71, 0x18, 0x05, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x65, 0x70,
-	0x6f, 0x63, 0x68, 0x53, 0x65, 0x71, 0x22, 0x7e, 0x0a, 0x08, 0x44, 0x65, 0x6c, 0x65, 0x67, 0x61,
-	0x74, 0x65, 0x12, 0x37, 0x0a, 0x06, 0x61, 0x63, 0x74, 0x69, 0x76, 0x65, 0x18, 0x01, 0x20, 0x03,
-	0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68,
-	0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x65, 0x45, 0x6e,
-	0x74, 0x72, 0x79, 0x52, 0x06, 0x61, 0x63, 0x74, 0x69, 0x76, 0x65, 0x12, 0x39, 0x0a, 0x07, 0x70,
-	0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x76,
+	0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x12, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65,
+	0x74, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x11, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x61,
+	0x73, 0x73, 0x65, 0x74, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x17, 0x76, 0x65, 0x67,
+	0x61, 0x2f, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x15, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x67, 0x6f, 0x76, 0x65, 0x72,
+	0x6e, 0x61, 0x6e, 0x63, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1b, 0x76, 0x65, 0x67,
+	0x61, 0x2f, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2f, 0x76, 0x31, 0x2f, 0x65, 0x76, 0x65, 0x6e,
+	0x74, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x9c, 0x01, 0x0a, 0x08, 0x53, 0x6e, 0x61,
+	0x70, 0x73, 0x68, 0x6f, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x30, 0x0a,
+	0x06, 0x66, 0x6f, 0x72, 0x6d, 0x61, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x18, 0x2e,
+	0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31,
+	0x2e, 0x46, 0x6f, 0x72, 0x6d, 0x61, 0x74, 0x52, 0x06, 0x66, 0x6f, 0x72, 0x6d, 0x61, 0x74, 0x12,
+	0x16, 0x0a, 0x06, 0x63, 0x68, 0x75, 0x6e, 0x6b, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0d, 0x52,
+	0x06, 0x63, 0x68, 0x75, 0x6e, 0x6b, 0x73, 0x12, 0x12, 0x0a, 0x04, 0x68, 0x61, 0x73, 0x68, 0x18,
+	0x04, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x68, 0x61, 0x73, 0x68, 0x12, 0x1a, 0x0a, 0x08, 0x6d,
+	0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x08, 0x6d,
+	0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x22, 0x69, 0x0a, 0x08, 0x4e, 0x6f, 0x64, 0x65, 0x48,
+	0x61, 0x73, 0x68, 0x12, 0x19, 0x0a, 0x08, 0x66, 0x75, 0x6c, 0x6c, 0x5f, 0x6b, 0x65, 0x79, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x66, 0x75, 0x6c, 0x6c, 0x4b, 0x65, 0x79, 0x12, 0x1c,
+	0x0a, 0x09, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x09, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x12, 0x10, 0x0a, 0x03,
+	0x6b, 0x65, 0x79, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x12,
+	0x0a, 0x04, 0x68, 0x61, 0x73, 0x68, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x68, 0x61,
+	0x73, 0x68, 0x22, 0x84, 0x01, 0x0a, 0x08, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x12,
+	0x18, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03,
+	0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x21, 0x0a, 0x0c, 0x63, 0x68, 0x75,
+	0x6e, 0x6b, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52,
+	0x0b, 0x63, 0x68, 0x75, 0x6e, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x65, 0x73, 0x12, 0x3b, 0x0a, 0x0b,
+	0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x65, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x1a, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f,
+	0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4e, 0x6f, 0x64, 0x65, 0x48, 0x61, 0x73, 0x68, 0x52, 0x0a, 0x6e,
+	0x6f, 0x64, 0x65, 0x48, 0x61, 0x73, 0x68, 0x65, 0x73, 0x22, 0x56, 0x0a, 0x05, 0x43, 0x68, 0x75,
+	0x6e, 0x6b, 0x12, 0x2d, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b,
+	0x32, 0x19, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74,
+	0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x52, 0x04, 0x64, 0x61, 0x74,
+	0x61, 0x12, 0x0e, 0x0a, 0x02, 0x6e, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x02, 0x6e,
+	0x72, 0x12, 0x0e, 0x0a, 0x02, 0x6f, 0x66, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x52, 0x02, 0x6f,
+	0x66, 0x22, 0x93, 0x0c, 0x0a, 0x07, 0x50, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x12, 0x45, 0x0a,
+	0x0d, 0x61, 0x63, 0x74, 0x69, 0x76, 0x65, 0x5f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x73, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70,
+	0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x63, 0x74, 0x69, 0x76, 0x65, 0x41, 0x73,
+	0x73, 0x65, 0x74, 0x73, 0x48, 0x00, 0x52, 0x0c, 0x61, 0x63, 0x74, 0x69, 0x76, 0x65, 0x41, 0x73,
+	0x73, 0x65, 0x74, 0x73, 0x12, 0x48, 0x0a, 0x0e, 0x70, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f,
+	0x61, 0x73, 0x73, 0x65, 0x74, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x76,
 	0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e,
-	0x44, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x65, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52, 0x07, 0x70,
-	0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x22, 0x1f, 0x0a, 0x05, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x12,
-	0x16, 0x0a, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52,
-	0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x42, 0x32, 0x5a, 0x30, 0x63, 0x6f, 0x64, 0x65, 0x2e,
-	0x76, 0x65, 0x67, 0x61, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x2e, 0x69, 0x6f, 0x2f,
-	0x73, 0x64, 0x6b, 0x2d, 0x67, 0x6f, 0x6c, 0x61, 0x6e, 0x67, 0x2f, 0x76, 0x65, 0x67, 0x61, 0x2f,
-	0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x33,
+	0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x41, 0x73, 0x73, 0x65, 0x74, 0x73, 0x48, 0x00, 0x52,
+	0x0d, 0x70, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x41, 0x73, 0x73, 0x65, 0x74, 0x73, 0x12, 0x57,
+	0x0a, 0x13, 0x62, 0x61, 0x6e, 0x6b, 0x69, 0x6e, 0x67, 0x5f, 0x77, 0x69, 0x74, 0x68, 0x64, 0x72,
+	0x61, 0x77, 0x61, 0x6c, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x24, 0x2e, 0x76, 0x65,
+	0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x42,
+	0x61, 0x6e, 0x6b, 0x69, 0x6e, 0x67, 0x57, 0x69, 0x74, 0x68, 0x64, 0x72, 0x61, 0x77, 0x61, 0x6c,
+	0x73, 0x48, 0x00, 0x52, 0x12, 0x62, 0x61, 0x6e, 0x6b, 0x69, 0x6e, 0x67, 0x57, 0x69, 0x74, 0x68,
+	0x64, 0x72, 0x61, 0x77, 0x61, 0x6c, 0x73, 0x12, 0x4e, 0x0a, 0x10, 0x62, 0x61, 0x6e, 0x6b, 0x69,
+	0x6e, 0x67, 0x5f, 0x64, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x21, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f,
+	0x74, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x61, 0x6e, 0x6b, 0x69, 0x6e, 0x67, 0x44, 0x65, 0x70, 0x6f,
+	0x73, 0x69, 0x74, 0x73, 0x48, 0x00, 0x52, 0x0f, 0x62, 0x61, 0x6e, 0x6b, 0x69, 0x6e, 0x67, 0x44,
+	0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x73, 0x12, 0x42, 0x0a, 0x0c, 0x62, 0x61, 0x6e, 0x6b, 0x69,
+	0x6e, 0x67, 0x5f, 0x73, 0x65, 0x65, 0x6e, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1d, 0x2e,
+	0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31,
+	0x2e, 0x42, 0x61, 0x6e, 0x6b, 0x69, 0x6e, 0x67, 0x53, 0x65, 0x65, 0x6e, 0x48, 0x00, 0x52, 0x0b,
+	0x62, 0x61, 0x6e, 0x6b, 0x69, 0x6e, 0x67, 0x53, 0x65, 0x65, 0x6e, 0x12, 0x3e, 0x0a, 0x0a, 0x63,
+	0x68, 0x65, 0x63, 0x6b, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x1c, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e,
+	0x76, 0x31, 0x2e, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x48, 0x00, 0x52,
+	0x0a, 0x63, 0x68, 0x65, 0x63, 0x6b, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x12, 0x57, 0x0a, 0x13, 0x63,
+	0x6f, 0x6c, 0x6c, 0x61, 0x74, 0x65, 0x72, 0x61, 0x6c, 0x5f, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e,
+	0x74, 0x73, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x24, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e,
+	0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6c, 0x6c,
+	0x61, 0x74, 0x65, 0x72, 0x61, 0x6c, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x48, 0x00,
+	0x52, 0x12, 0x63, 0x6f, 0x6c, 0x6c, 0x61, 0x74, 0x65, 0x72, 0x61, 0x6c, 0x41, 0x63, 0x63, 0x6f,
+	0x75, 0x6e, 0x74, 0x73, 0x12, 0x51, 0x0a, 0x11, 0x63, 0x6f, 0x6c, 0x6c, 0x61, 0x74, 0x65, 0x72,
+	0x61, 0x6c, 0x5f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x73, 0x18, 0x08, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x22, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e,
+	0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6c, 0x6c, 0x61, 0x74, 0x65, 0x72, 0x61, 0x6c, 0x41, 0x73, 0x73,
+	0x65, 0x74, 0x73, 0x48, 0x00, 0x52, 0x10, 0x63, 0x6f, 0x6c, 0x6c, 0x61, 0x74, 0x65, 0x72, 0x61,
+	0x6c, 0x41, 0x73, 0x73, 0x65, 0x74, 0x73, 0x12, 0x51, 0x0a, 0x11, 0x64, 0x65, 0x6c, 0x65, 0x67,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x61, 0x63, 0x74, 0x69, 0x76, 0x65, 0x18, 0x09, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x22, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68,
+	0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x41, 0x63, 0x74, 0x69, 0x76, 0x65, 0x48, 0x00, 0x52, 0x10, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x41, 0x63, 0x74, 0x69, 0x76, 0x65, 0x12, 0x54, 0x0a, 0x12, 0x64, 0x65,
+	0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x70, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67,
+	0x18, 0x0a, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x23, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e,
+	0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x67, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x48, 0x00, 0x52, 0x11, 0x64,
+	0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67,
+	0x12, 0x4b, 0x0a, 0x0f, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x61,
+	0x75, 0x74, 0x6f, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x76, 0x65, 0x67, 0x61,
+	0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x6c,
+	0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x75, 0x74, 0x6f, 0x48, 0x00, 0x52, 0x0e, 0x64,
+	0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x75, 0x74, 0x6f, 0x12, 0x51, 0x0a,
+	0x11, 0x67, 0x6f, 0x76, 0x65, 0x72, 0x6e, 0x61, 0x6e, 0x63, 0x65, 0x5f, 0x61, 0x63, 0x74, 0x69,
+	0x76, 0x65, 0x18, 0x0c, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x22, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e,
+	0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x6f, 0x76, 0x65,
+	0x72, 0x6e, 0x61, 0x6e, 0x63, 0x65, 0x41, 0x63, 0x74, 0x69, 0x76, 0x65, 0x48, 0x00, 0x52, 0x10,
+	0x67, 0x6f, 0x76, 0x65, 0x72, 0x6e, 0x61, 0x6e, 0x63, 0x65, 0x41, 0x63, 0x74, 0x69, 0x76, 0x65,
+	0x12, 0x54, 0x0a, 0x12, 0x67, 0x6f, 0x76, 0x65, 0x72, 0x6e, 0x61, 0x6e, 0x63, 0x65, 0x5f, 0x65,
+	0x6e, 0x61, 0x63, 0x74, 0x65, 0x64, 0x18, 0x0d, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x23, 0x2e, 0x76,
+	0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e,
+	0x47, 0x6f, 0x76, 0x65, 0x72, 0x6e, 0x61, 0x6e, 0x63, 0x65, 0x45, 0x6e, 0x61, 0x63, 0x74, 0x65,
+	0x64, 0x48, 0x00, 0x52, 0x11, 0x67, 0x6f, 0x76, 0x65, 0x72, 0x6e, 0x61, 0x6e, 0x63, 0x65, 0x45,
+	0x6e, 0x61, 0x63, 0x74, 0x65, 0x64, 0x12, 0x4e, 0x0a, 0x10, 0x73, 0x74, 0x61, 0x6b, 0x69, 0x6e,
+	0x67, 0x5f, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x18, 0x0e, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x21, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74,
+	0x2e, 0x76, 0x31, 0x2e, 0x53, 0x74, 0x61, 0x6b, 0x69, 0x6e, 0x67, 0x41, 0x63, 0x63, 0x6f, 0x75,
+	0x6e, 0x74, 0x73, 0x48, 0x00, 0x52, 0x0f, 0x73, 0x74, 0x61, 0x6b, 0x69, 0x6e, 0x67, 0x41, 0x63,
+	0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x12, 0x45, 0x0a, 0x0d, 0x6d, 0x61, 0x74, 0x63, 0x68, 0x69,
+	0x6e, 0x67, 0x5f, 0x62, 0x6f, 0x6f, 0x6b, 0x18, 0x0f, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e,
+	0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31,
+	0x2e, 0x4d, 0x61, 0x74, 0x63, 0x68, 0x69, 0x6e, 0x67, 0x42, 0x6f, 0x6f, 0x6b, 0x48, 0x00, 0x52,
+	0x0c, 0x6d, 0x61, 0x74, 0x63, 0x68, 0x69, 0x6e, 0x67, 0x42, 0x6f, 0x6f, 0x6b, 0x12, 0x4c, 0x0a,
+	0x12, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x5f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x65, 0x74,
+	0x65, 0x72, 0x73, 0x18, 0x10, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x76, 0x65, 0x67, 0x61,
+	0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4e, 0x65, 0x74,
+	0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x48, 0x00, 0x52, 0x11, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72,
+	0x6b, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x65, 0x74, 0x65, 0x72, 0x73, 0x12, 0x51, 0x0a, 0x11, 0x65,
+	0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x73,
+	0x18, 0x11, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x22, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e,
+	0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74,
+	0x69, 0x6f, 0x6e, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x73, 0x48, 0x00, 0x52, 0x10, 0x65, 0x78,
+	0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x73, 0x12, 0x4e,
+	0x0a, 0x10, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5f, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f,
+	0x6e, 0x73, 0x18, 0x12, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e,
+	0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x61, 0x72, 0x6b,
+	0x65, 0x74, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x48, 0x00, 0x52, 0x0f, 0x6d,
+	0x61, 0x72, 0x6b, 0x65, 0x74, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x39,
+	0x0a, 0x09, 0x61, 0x70, 0x70, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x65, 0x18, 0x13, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x1a, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f,
+	0x74, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x70, 0x70, 0x53, 0x74, 0x61, 0x74, 0x65, 0x48, 0x00, 0x52,
+	0x08, 0x61, 0x70, 0x70, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x34, 0x0a, 0x05, 0x65, 0x70, 0x6f,
+	0x63, 0x68, 0x18, 0x14, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e,
+	0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x70, 0x6f, 0x63,
+	0x68, 0x53, 0x74, 0x61, 0x74, 0x65, 0x48, 0x00, 0x52, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x42,
+	0x06, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x22, 0x3f, 0x0a, 0x12, 0x43, 0x6f, 0x6c, 0x6c, 0x61,
+	0x74, 0x65, 0x72, 0x61, 0x6c, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x12, 0x29, 0x0a,
+	0x08, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32,
+	0x0d, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x52, 0x08,
+	0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x22, 0x37, 0x0a, 0x10, 0x43, 0x6f, 0x6c, 0x6c,
+	0x61, 0x74, 0x65, 0x72, 0x61, 0x6c, 0x41, 0x73, 0x73, 0x65, 0x74, 0x73, 0x12, 0x23, 0x0a, 0x06,
+	0x61, 0x73, 0x73, 0x65, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0b, 0x2e, 0x76,
+	0x65, 0x67, 0x61, 0x2e, 0x41, 0x73, 0x73, 0x65, 0x74, 0x52, 0x06, 0x61, 0x73, 0x73, 0x65, 0x74,
+	0x73, 0x22, 0x33, 0x0a, 0x0c, 0x41, 0x63, 0x74, 0x69, 0x76, 0x65, 0x41, 0x73, 0x73, 0x65, 0x74,
+	0x73, 0x12, 0x23, 0x0a, 0x06, 0x61, 0x73, 0x73, 0x65, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x0b, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x41, 0x73, 0x73, 0x65, 0x74, 0x52, 0x06,
+	0x61, 0x73, 0x73, 0x65, 0x74, 0x73, 0x22, 0x34, 0x0a, 0x0d, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e,
+	0x67, 0x41, 0x73, 0x73, 0x65, 0x74, 0x73, 0x12, 0x23, 0x0a, 0x06, 0x61, 0x73, 0x73, 0x65, 0x74,
+	0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0b, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x41,
+	0x73, 0x73, 0x65, 0x74, 0x52, 0x06, 0x61, 0x73, 0x73, 0x65, 0x74, 0x73, 0x22, 0x50, 0x0a, 0x0a,
+	0x57, 0x69, 0x74, 0x68, 0x64, 0x72, 0x61, 0x77, 0x61, 0x6c, 0x12, 0x10, 0x0a, 0x03, 0x72, 0x65,
+	0x66, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x72, 0x65, 0x66, 0x12, 0x30, 0x0a, 0x0a,
+	0x77, 0x69, 0x74, 0x68, 0x64, 0x72, 0x61, 0x77, 0x61, 0x6c, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x10, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x57, 0x69, 0x74, 0x68, 0x64, 0x72, 0x61, 0x77,
+	0x61, 0x6c, 0x52, 0x0a, 0x77, 0x69, 0x74, 0x68, 0x64, 0x72, 0x61, 0x77, 0x61, 0x6c, 0x22, 0x42,
+	0x0a, 0x07, 0x44, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x12, 0x27, 0x0a, 0x07, 0x64, 0x65, 0x70,
+	0x6f, 0x73, 0x69, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0d, 0x2e, 0x76, 0x65, 0x67,
+	0x61, 0x2e, 0x44, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x52, 0x07, 0x64, 0x65, 0x70, 0x6f, 0x73,
+	0x69, 0x74, 0x22, 0x69, 0x0a, 0x05, 0x54, 0x78, 0x52, 0x65, 0x66, 0x12, 0x14, 0x0a, 0x05, 0x61,
+	0x73, 0x73, 0x65, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x61, 0x73, 0x73, 0x65,
+	0x74, 0x12, 0x19, 0x0a, 0x08, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x6e, 0x72, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x04, 0x52, 0x07, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x4e, 0x72, 0x12, 0x12, 0x0a, 0x04,
+	0x68, 0x61, 0x73, 0x68, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x68, 0x61, 0x73, 0x68,
+	0x12, 0x1b, 0x0a, 0x09, 0x6c, 0x6f, 0x67, 0x5f, 0x69, 0x6e, 0x64, 0x65, 0x78, 0x18, 0x04, 0x20,
+	0x01, 0x28, 0x04, 0x52, 0x08, 0x6c, 0x6f, 0x67, 0x49, 0x6e, 0x64, 0x65, 0x78, 0x22, 0x54, 0x0a,
+	0x12, 0x42, 0x61, 0x6e, 0x6b, 0x69, 0x6e, 0x67, 0x57, 0x69, 0x74, 0x68, 0x64, 0x72, 0x61, 0x77,
+	0x61, 0x6c, 0x73, 0x12, 0x3e, 0x0a, 0x0b, 0x77, 0x69, 0x74, 0x68, 0x64, 0x72, 0x61, 0x77, 0x61,
+	0x6c, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e,
+	0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x57, 0x69, 0x74, 0x68,
+	0x64, 0x72, 0x61, 0x77, 0x61, 0x6c, 0x52, 0x0b, 0x77, 0x69, 0x74, 0x68, 0x64, 0x72, 0x61, 0x77,
+	0x61, 0x6c, 0x73, 0x22, 0x46, 0x0a, 0x0f, 0x42, 0x61, 0x6e, 0x6b, 0x69, 0x6e, 0x67, 0x44, 0x65,
+	0x70, 0x6f, 0x73, 0x69, 0x74, 0x73, 0x12, 0x33, 0x0a, 0x07, 0x64, 0x65, 0x70, 0x6f, 0x73, 0x69,
+	0x74, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73,
+	0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x70, 0x6f, 0x73,
+	0x69, 0x74, 0x52, 0x07, 0x64, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x22, 0x3a, 0x0a, 0x0b, 0x42,
+	0x61, 0x6e, 0x6b, 0x69, 0x6e, 0x67, 0x53, 0x65, 0x65, 0x6e, 0x12, 0x2b, 0x0a, 0x04, 0x72, 0x65,
+	0x66, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e,
+	0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x78, 0x52, 0x65,
+	0x66, 0x52, 0x04, 0x72, 0x65, 0x66, 0x73, 0x22, 0x25, 0x0a, 0x0a, 0x43, 0x68, 0x65, 0x63, 0x6b,
+	0x70, 0x6f, 0x69, 0x6e, 0x74, 0x12, 0x17, 0x0a, 0x07, 0x6e, 0x65, 0x78, 0x74, 0x5f, 0x63, 0x70,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x06, 0x6e, 0x65, 0x78, 0x74, 0x43, 0x70, 0x22, 0x46,
+	0x0a, 0x10, 0x44, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x63, 0x74, 0x69,
+	0x76, 0x65, 0x12, 0x32, 0x0a, 0x0b, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x10, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x44,
+	0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x64, 0x65, 0x6c, 0x65, 0x67,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x22, 0x7d, 0x0a, 0x11, 0x44, 0x65, 0x6c, 0x65, 0x67, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x12, 0x32, 0x0a, 0x0b, 0x64,
+	0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b,
+	0x32, 0x10, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x52, 0x0b, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12,
+	0x34, 0x0a, 0x0c, 0x75, 0x6e, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18,
+	0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x10, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x44, 0x65, 0x6c,
+	0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0c, 0x75, 0x6e, 0x64, 0x65, 0x6c, 0x65, 0x67,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x2a, 0x0a, 0x0e, 0x44, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x41, 0x75, 0x74, 0x6f, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x61, 0x72, 0x74, 0x69,
+	0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x07, 0x70, 0x61, 0x72, 0x74, 0x69, 0x65,
+	0x73, 0x22, 0x9d, 0x01, 0x0a, 0x0f, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x50, 0x72, 0x6f,
+	0x70, 0x6f, 0x73, 0x61, 0x6c, 0x12, 0x2a, 0x0a, 0x08, 0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61,
+	0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0e, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x50,
+	0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x52, 0x08, 0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61,
+	0x6c, 0x12, 0x1c, 0x0a, 0x03, 0x79, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0a,
+	0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x56, 0x6f, 0x74, 0x65, 0x52, 0x03, 0x79, 0x65, 0x73, 0x12,
+	0x1a, 0x0a, 0x02, 0x6e, 0x6f, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0a, 0x2e, 0x76, 0x65,
+	0x67, 0x61, 0x2e, 0x56, 0x6f, 0x74, 0x65, 0x52, 0x02, 0x6e, 0x6f, 0x12, 0x24, 0x0a, 0x07, 0x69,
+	0x6e, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0a, 0x2e, 0x76,
+	0x65, 0x67, 0x61, 0x2e, 0x56, 0x6f, 0x74, 0x65, 0x52, 0x07, 0x69, 0x6e, 0x76, 0x61, 0x6c, 0x69,
+	0x64, 0x22, 0x41, 0x0a, 0x11, 0x47, 0x6f, 0x76, 0x65, 0x72, 0x6e, 0x61, 0x6e, 0x63, 0x65, 0x45,
+	0x6e, 0x61, 0x63, 0x74, 0x65, 0x64, 0x12, 0x2c, 0x0a, 0x09, 0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73,
+	0x61, 0x6c, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0e, 0x2e, 0x76, 0x65, 0x67, 0x61,
+	0x2e, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x52, 0x09, 0x70, 0x72, 0x6f, 0x70, 0x6f,
+	0x73, 0x61, 0x6c, 0x73, 0x22, 0x53, 0x0a, 0x10, 0x47, 0x6f, 0x76, 0x65, 0x72, 0x6e, 0x61, 0x6e,
+	0x63, 0x65, 0x41, 0x63, 0x74, 0x69, 0x76, 0x65, 0x12, 0x3f, 0x0a, 0x09, 0x70, 0x72, 0x6f, 0x70,
+	0x6f, 0x73, 0x61, 0x6c, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x76, 0x65,
+	0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x50,
+	0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x52, 0x09,
+	0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x73, 0x22, 0x76, 0x0a, 0x0e, 0x53, 0x74, 0x61,
+	0x6b, 0x69, 0x6e, 0x67, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x70,
+	0x61, 0x72, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x70, 0x61, 0x72, 0x74,
+	0x79, 0x12, 0x18, 0x0a, 0x07, 0x62, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x07, 0x62, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x12, 0x34, 0x0a, 0x06, 0x65,
+	0x76, 0x65, 0x6e, 0x74, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x76, 0x65,
+	0x67, 0x61, 0x2e, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x74, 0x61,
+	0x6b, 0x65, 0x4c, 0x69, 0x6e, 0x6b, 0x69, 0x6e, 0x67, 0x52, 0x06, 0x65, 0x76, 0x65, 0x6e, 0x74,
+	0x73, 0x22, 0x4f, 0x0a, 0x0f, 0x53, 0x74, 0x61, 0x6b, 0x69, 0x6e, 0x67, 0x41, 0x63, 0x63, 0x6f,
+	0x75, 0x6e, 0x74, 0x73, 0x12, 0x3c, 0x0a, 0x08, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73,
+	0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e,
+	0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x74, 0x61, 0x6b, 0x69, 0x6e,
+	0x67, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x52, 0x08, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e,
+	0x74, 0x73, 0x22, 0x6b, 0x0a, 0x0c, 0x4d, 0x61, 0x74, 0x63, 0x68, 0x69, 0x6e, 0x67, 0x42, 0x6f,
+	0x6f, 0x6b, 0x12, 0x1b, 0x0a, 0x09, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5f, 0x69, 0x64, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x49, 0x64, 0x12,
+	0x1d, 0x0a, 0x03, 0x62, 0x75, 0x79, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0b, 0x2e, 0x76,
+	0x65, 0x67, 0x61, 0x2e, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x52, 0x03, 0x62, 0x75, 0x79, 0x12, 0x1f,
+	0x0a, 0x04, 0x73, 0x65, 0x6c, 0x6c, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0b, 0x2e, 0x76,
+	0x65, 0x67, 0x61, 0x2e, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x52, 0x04, 0x73, 0x65, 0x6c, 0x6c, 0x22,
+	0x3b, 0x0a, 0x09, 0x4e, 0x65, 0x74, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x2e, 0x0a, 0x06,
+	0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x76,
+	0x65, 0x67, 0x61, 0x2e, 0x4e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x50, 0x61, 0x72, 0x61, 0x6d,
+	0x65, 0x74, 0x65, 0x72, 0x52, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x22, 0x30, 0x0a, 0x0a,
+	0x44, 0x65, 0x63, 0x69, 0x6d, 0x61, 0x6c, 0x4d, 0x61, 0x70, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65,
+	0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x10, 0x0a, 0x03,
+	0x76, 0x61, 0x6c, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x76, 0x61, 0x6c, 0x22, 0x35,
+	0x0a, 0x09, 0x54, 0x69, 0x6d, 0x65, 0x50, 0x72, 0x69, 0x63, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x74,
+	0x69, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x04, 0x74, 0x69, 0x6d, 0x65, 0x12,
+	0x14, 0x0a, 0x05, 0x70, 0x72, 0x69, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05,
+	0x70, 0x72, 0x69, 0x63, 0x65, 0x22, 0x3b, 0x0a, 0x0b, 0x50, 0x72, 0x69, 0x63, 0x65, 0x56, 0x6f,
+	0x6c, 0x75, 0x6d, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x70, 0x72, 0x69, 0x63, 0x65, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x05, 0x70, 0x72, 0x69, 0x63, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x76, 0x6f,
+	0x6c, 0x75, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x76, 0x6f, 0x6c, 0x75,
+	0x6d, 0x65, 0x22, 0x42, 0x0a, 0x0a, 0x50, 0x72, 0x69, 0x63, 0x65, 0x52, 0x61, 0x6e, 0x67, 0x65,
+	0x12, 0x10, 0x0a, 0x03, 0x6d, 0x69, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6d,
+	0x69, 0x6e, 0x12, 0x10, 0x0a, 0x03, 0x6d, 0x61, 0x78, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x03, 0x6d, 0x61, 0x78, 0x12, 0x10, 0x0a, 0x03, 0x72, 0x65, 0x66, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x03, 0x72, 0x65, 0x66, 0x22, 0x9a, 0x01, 0x0a, 0x0a, 0x50, 0x72, 0x69, 0x63, 0x65,
+	0x42, 0x6f, 0x75, 0x6e, 0x64, 0x12, 0x16, 0x0a, 0x06, 0x61, 0x63, 0x74, 0x69, 0x76, 0x65, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x06, 0x61, 0x63, 0x74, 0x69, 0x76, 0x65, 0x12, 0x1b, 0x0a,
+	0x09, 0x75, 0x70, 0x5f, 0x66, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x08, 0x75, 0x70, 0x46, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x12, 0x1f, 0x0a, 0x0b, 0x64, 0x6f,
+	0x77, 0x6e, 0x5f, 0x66, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x0a, 0x64, 0x6f, 0x77, 0x6e, 0x46, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x12, 0x36, 0x0a, 0x07, 0x74,
+	0x72, 0x69, 0x67, 0x67, 0x65, 0x72, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x76,
+	0x65, 0x67, 0x61, 0x2e, 0x50, 0x72, 0x69, 0x63, 0x65, 0x4d, 0x6f, 0x6e, 0x69, 0x74, 0x6f, 0x72,
+	0x69, 0x6e, 0x67, 0x54, 0x72, 0x69, 0x67, 0x67, 0x65, 0x72, 0x52, 0x07, 0x74, 0x72, 0x69, 0x67,
+	0x67, 0x65, 0x72, 0x22, 0x79, 0x0a, 0x0f, 0x50, 0x72, 0x69, 0x63, 0x65, 0x52, 0x61, 0x6e, 0x67,
+	0x65, 0x43, 0x61, 0x63, 0x68, 0x65, 0x12, 0x32, 0x0a, 0x05, 0x62, 0x6f, 0x75, 0x6e, 0x64, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61,
+	0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72, 0x69, 0x63, 0x65, 0x42, 0x6f,
+	0x75, 0x6e, 0x64, 0x52, 0x05, 0x62, 0x6f, 0x75, 0x6e, 0x64, 0x12, 0x32, 0x0a, 0x05, 0x72, 0x61,
+	0x6e, 0x67, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x76, 0x65, 0x67, 0x61,
+	0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72, 0x69,
+	0x63, 0x65, 0x52, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x05, 0x72, 0x61, 0x6e, 0x67, 0x65, 0x22, 0xca,
+	0x03, 0x0a, 0x0c, 0x50, 0x72, 0x69, 0x63, 0x65, 0x4d, 0x6f, 0x6e, 0x69, 0x74, 0x6f, 0x72, 0x12,
+	0x20, 0x0a, 0x0b, 0x69, 0x6e, 0x69, 0x74, 0x69, 0x61, 0x6c, 0x69, 0x73, 0x65, 0x64, 0x18, 0x03,
+	0x20, 0x01, 0x28, 0x08, 0x52, 0x0b, 0x69, 0x6e, 0x69, 0x74, 0x69, 0x61, 0x6c, 0x69, 0x73, 0x65,
+	0x64, 0x12, 0x3d, 0x0a, 0x0b, 0x66, 0x70, 0x5f, 0x68, 0x6f, 0x72, 0x69, 0x7a, 0x6f, 0x6e, 0x73,
+	0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e,
+	0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x63, 0x69, 0x6d, 0x61,
+	0x6c, 0x4d, 0x61, 0x70, 0x52, 0x0a, 0x66, 0x70, 0x48, 0x6f, 0x72, 0x69, 0x7a, 0x6f, 0x6e, 0x73,
+	0x12, 0x10, 0x0a, 0x03, 0x6e, 0x6f, 0x77, 0x18, 0x05, 0x20, 0x01, 0x28, 0x03, 0x52, 0x03, 0x6e,
+	0x6f, 0x77, 0x12, 0x16, 0x0a, 0x06, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x18, 0x06, 0x20, 0x01,
+	0x28, 0x03, 0x52, 0x06, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x12, 0x34, 0x0a, 0x06, 0x62, 0x6f,
+	0x75, 0x6e, 0x64, 0x73, 0x18, 0x07, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x76, 0x65, 0x67,
+	0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72,
+	0x69, 0x63, 0x65, 0x42, 0x6f, 0x75, 0x6e, 0x64, 0x52, 0x06, 0x62, 0x6f, 0x75, 0x6e, 0x64, 0x73,
+	0x12, 0x33, 0x0a, 0x16, 0x70, 0x72, 0x69, 0x63, 0x65, 0x5f, 0x72, 0x61, 0x6e, 0x67, 0x65, 0x5f,
+	0x63, 0x61, 0x63, 0x68, 0x65, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x08, 0x20, 0x01, 0x28, 0x03,
+	0x52, 0x13, 0x70, 0x72, 0x69, 0x63, 0x65, 0x52, 0x61, 0x6e, 0x67, 0x65, 0x43, 0x61, 0x63, 0x68,
+	0x65, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x4d, 0x0a, 0x11, 0x70, 0x72, 0x69, 0x63, 0x65, 0x5f, 0x72,
+	0x61, 0x6e, 0x67, 0x65, 0x5f, 0x63, 0x61, 0x63, 0x68, 0x65, 0x18, 0x09, 0x20, 0x03, 0x28, 0x0b,
+	0x32, 0x21, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74,
+	0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72, 0x69, 0x63, 0x65, 0x52, 0x61, 0x6e, 0x67, 0x65, 0x43, 0x61,
+	0x63, 0x68, 0x65, 0x52, 0x0f, 0x70, 0x72, 0x69, 0x63, 0x65, 0x52, 0x61, 0x6e, 0x67, 0x65, 0x43,
+	0x61, 0x63, 0x68, 0x65, 0x12, 0x2f, 0x0a, 0x14, 0x72, 0x65, 0x66, 0x5f, 0x70, 0x72, 0x69, 0x63,
+	0x65, 0x5f, 0x63, 0x61, 0x63, 0x68, 0x65, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x0a, 0x20, 0x01,
+	0x28, 0x03, 0x52, 0x11, 0x72, 0x65, 0x66, 0x50, 0x72, 0x69, 0x63, 0x65, 0x43, 0x61, 0x63, 0x68,
+	0x65, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x44, 0x0a, 0x0f, 0x72, 0x65, 0x66, 0x5f, 0x70, 0x72, 0x69,
+	0x63, 0x65, 0x5f, 0x63, 0x61, 0x63, 0x68, 0x65, 0x18, 0x0b, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1c,
+	0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76,
+	0x31, 0x2e, 0x44, 0x65, 0x63, 0x69, 0x6d, 0x61, 0x6c, 0x4d, 0x61, 0x70, 0x52, 0x0d, 0x72, 0x65,
+	0x66, 0x50, 0x72, 0x69, 0x63, 0x65, 0x43, 0x61, 0x63, 0x68, 0x65, 0x22, 0xc6, 0x02, 0x0a, 0x0c,
+	0x41, 0x75, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x2c, 0x0a, 0x04,
+	0x6d, 0x6f, 0x64, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x18, 0x2e, 0x76, 0x65, 0x67,
+	0x61, 0x2e, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x54, 0x72, 0x61, 0x64, 0x69, 0x6e, 0x67,
+	0x4d, 0x6f, 0x64, 0x65, 0x52, 0x04, 0x6d, 0x6f, 0x64, 0x65, 0x12, 0x3b, 0x0a, 0x0c, 0x64, 0x65,
+	0x66, 0x61, 0x75, 0x6c, 0x74, 0x5f, 0x6d, 0x6f, 0x64, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e,
+	0x32, 0x18, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x54,
+	0x72, 0x61, 0x64, 0x69, 0x6e, 0x67, 0x4d, 0x6f, 0x64, 0x65, 0x52, 0x0b, 0x64, 0x65, 0x66, 0x61,
+	0x75, 0x6c, 0x74, 0x4d, 0x6f, 0x64, 0x65, 0x12, 0x2e, 0x0a, 0x07, 0x74, 0x72, 0x69, 0x67, 0x67,
+	0x65, 0x72, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x14, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e,
+	0x41, 0x75, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x72, 0x69, 0x67, 0x67, 0x65, 0x72, 0x52, 0x07,
+	0x74, 0x72, 0x69, 0x67, 0x67, 0x65, 0x72, 0x12, 0x14, 0x0a, 0x05, 0x62, 0x65, 0x67, 0x69, 0x6e,
+	0x18, 0x04, 0x20, 0x01, 0x28, 0x03, 0x52, 0x05, 0x62, 0x65, 0x67, 0x69, 0x6e, 0x12, 0x27, 0x0a,
+	0x03, 0x65, 0x6e, 0x64, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x76, 0x65, 0x67,
+	0x61, 0x2e, 0x41, 0x75, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x44, 0x75, 0x72, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x52, 0x03, 0x65, 0x6e, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x73, 0x74, 0x61, 0x72, 0x74, 0x18,
+	0x06, 0x20, 0x01, 0x28, 0x08, 0x52, 0x05, 0x73, 0x74, 0x61, 0x72, 0x74, 0x12, 0x12, 0x0a, 0x04,
+	0x73, 0x74, 0x6f, 0x70, 0x18, 0x07, 0x20, 0x01, 0x28, 0x08, 0x52, 0x04, 0x73, 0x74, 0x6f, 0x70,
+	0x12, 0x32, 0x0a, 0x09, 0x65, 0x78, 0x74, 0x65, 0x6e, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x08, 0x20,
+	0x01, 0x28, 0x0e, 0x32, 0x14, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x41, 0x75, 0x63, 0x74, 0x69,
+	0x6f, 0x6e, 0x54, 0x72, 0x69, 0x67, 0x67, 0x65, 0x72, 0x52, 0x09, 0x65, 0x78, 0x74, 0x65, 0x6e,
+	0x73, 0x69, 0x6f, 0x6e, 0x22, 0x5d, 0x0a, 0x0d, 0x45, 0x71, 0x75, 0x69, 0x74, 0x79, 0x53, 0x68,
+	0x61, 0x72, 0x65, 0x4c, 0x50, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x02, 0x69, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x73,
+	0x68, 0x61, 0x72, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x73, 0x68, 0x61, 0x72,
+	0x65, 0x12, 0x10, 0x0a, 0x03, 0x61, 0x76, 0x67, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03,
+	0x61, 0x76, 0x67, 0x22, 0x86, 0x01, 0x0a, 0x0b, 0x45, 0x71, 0x75, 0x69, 0x74, 0x79, 0x53, 0x68,
+	0x61, 0x72, 0x65, 0x12, 0x10, 0x0a, 0x03, 0x6d, 0x76, 0x70, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x03, 0x6d, 0x76, 0x70, 0x12, 0x32, 0x0a, 0x15, 0x6f, 0x70, 0x65, 0x6e, 0x69, 0x6e, 0x67,
+	0x5f, 0x61, 0x75, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x65, 0x64, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x08, 0x52, 0x13, 0x6f, 0x70, 0x65, 0x6e, 0x69, 0x6e, 0x67, 0x41, 0x75, 0x63,
+	0x74, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x65, 0x64, 0x12, 0x31, 0x0a, 0x03, 0x6c, 0x70, 0x73,
+	0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e,
+	0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x71, 0x75, 0x69, 0x74, 0x79,
+	0x53, 0x68, 0x61, 0x72, 0x65, 0x4c, 0x50, 0x52, 0x03, 0x6c, 0x70, 0x73, 0x22, 0x96, 0x05, 0x0a,
+	0x06, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x12, 0x24, 0x0a, 0x06, 0x6d, 0x61, 0x72, 0x6b, 0x65,
+	0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x4d,
+	0x61, 0x72, 0x6b, 0x65, 0x74, 0x52, 0x06, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x12, 0x43, 0x0a,
+	0x0d, 0x70, 0x72, 0x69, 0x63, 0x65, 0x5f, 0x6d, 0x6f, 0x6e, 0x69, 0x74, 0x6f, 0x72, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70,
+	0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72, 0x69, 0x63, 0x65, 0x4d, 0x6f, 0x6e,
+	0x69, 0x74, 0x6f, 0x72, 0x52, 0x0c, 0x70, 0x72, 0x69, 0x63, 0x65, 0x4d, 0x6f, 0x6e, 0x69, 0x74,
+	0x6f, 0x72, 0x12, 0x43, 0x0a, 0x0d, 0x61, 0x75, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x73, 0x74,
+	0x61, 0x74, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x76, 0x65, 0x67, 0x61,
+	0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x75, 0x63,
+	0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x0c, 0x61, 0x75, 0x63, 0x74, 0x69,
+	0x6f, 0x6e, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x30, 0x0a, 0x0d, 0x70, 0x65, 0x67, 0x67, 0x65,
+	0x64, 0x5f, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0b,
+	0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x52, 0x0c, 0x70, 0x65, 0x67,
+	0x67, 0x65, 0x64, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x73, 0x12, 0x34, 0x0a, 0x0f, 0x65, 0x78, 0x70,
+	0x69, 0x72, 0x69, 0x6e, 0x67, 0x5f, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x73, 0x18, 0x05, 0x20, 0x03,
+	0x28, 0x0b, 0x32, 0x0b, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x52,
+	0x0e, 0x65, 0x78, 0x70, 0x69, 0x72, 0x69, 0x6e, 0x67, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x73, 0x12,
+	0x22, 0x0a, 0x0d, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x62, 0x65, 0x73, 0x74, 0x5f, 0x62, 0x69, 0x64,
+	0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x6c, 0x61, 0x73, 0x74, 0x42, 0x65, 0x73, 0x74,
+	0x42, 0x69, 0x64, 0x12, 0x22, 0x0a, 0x0d, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x62, 0x65, 0x73, 0x74,
+	0x5f, 0x61, 0x73, 0x6b, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x6c, 0x61, 0x73, 0x74,
+	0x42, 0x65, 0x73, 0x74, 0x41, 0x73, 0x6b, 0x12, 0x20, 0x0a, 0x0c, 0x6c, 0x61, 0x73, 0x74, 0x5f,
+	0x6d, 0x69, 0x64, 0x5f, 0x62, 0x69, 0x64, 0x18, 0x08, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x6c,
+	0x61, 0x73, 0x74, 0x4d, 0x69, 0x64, 0x42, 0x69, 0x64, 0x12, 0x20, 0x0a, 0x0c, 0x6c, 0x61, 0x73,
+	0x74, 0x5f, 0x6d, 0x69, 0x64, 0x5f, 0x61, 0x73, 0x6b, 0x18, 0x09, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x0a, 0x6c, 0x61, 0x73, 0x74, 0x4d, 0x69, 0x64, 0x41, 0x73, 0x6b, 0x12, 0x35, 0x0a, 0x17, 0x6c,
+	0x61, 0x73, 0x74, 0x5f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5f, 0x76, 0x61, 0x6c, 0x75, 0x65,
+	0x5f, 0x70, 0x72, 0x6f, 0x78, 0x79, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x09, 0x52, 0x14, 0x6c, 0x61,
+	0x73, 0x74, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x50, 0x72, 0x6f,
+	0x78, 0x79, 0x12, 0x41, 0x0a, 0x1d, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x65, 0x71, 0x75, 0x69, 0x74,
+	0x79, 0x5f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x5f, 0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75,
+	0x74, 0x65, 0x64, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x03, 0x52, 0x1a, 0x6c, 0x61, 0x73, 0x74, 0x45,
+	0x71, 0x75, 0x69, 0x74, 0x79, 0x53, 0x68, 0x61, 0x72, 0x65, 0x44, 0x69, 0x73, 0x74, 0x72, 0x69,
+	0x62, 0x75, 0x74, 0x65, 0x64, 0x12, 0x40, 0x0a, 0x0c, 0x65, 0x71, 0x75, 0x69, 0x74, 0x79, 0x5f,
+	0x73, 0x68, 0x61, 0x72, 0x65, 0x18, 0x0c, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x76, 0x65,
+	0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x45,
+	0x71, 0x75, 0x69, 0x74, 0x79, 0x53, 0x68, 0x61, 0x72, 0x65, 0x52, 0x0b, 0x65, 0x71, 0x75, 0x69,
+	0x74, 0x79, 0x53, 0x68, 0x61, 0x72, 0x65, 0x12, 0x2c, 0x0a, 0x12, 0x63, 0x75, 0x72, 0x72, 0x65,
+	0x6e, 0x74, 0x5f, 0x6d, 0x61, 0x72, 0x6b, 0x5f, 0x70, 0x72, 0x69, 0x63, 0x65, 0x18, 0x0d, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x10, 0x63, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74, 0x4d, 0x61, 0x72, 0x6b,
+	0x50, 0x72, 0x69, 0x63, 0x65, 0x22, 0x46, 0x0a, 0x10, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69,
+	0x6f, 0x6e, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x73, 0x12, 0x32, 0x0a, 0x07, 0x6d, 0x61, 0x72,
+	0x6b, 0x65, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x76, 0x65, 0x67,
+	0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x61,
+	0x72, 0x6b, 0x65, 0x74, 0x52, 0x07, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x73, 0x22, 0xbb, 0x01,
+	0x0a, 0x08, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x19, 0x0a, 0x08, 0x70, 0x61,
+	0x72, 0x74, 0x79, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x70, 0x61,
+	0x72, 0x74, 0x79, 0x49, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x73, 0x69, 0x7a, 0x65, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x03, 0x52, 0x04, 0x73, 0x69, 0x7a, 0x65, 0x12, 0x10, 0x0a, 0x03, 0x62, 0x75, 0x79,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x52, 0x03, 0x62, 0x75, 0x79, 0x12, 0x12, 0x0a, 0x04, 0x73,
+	0x65, 0x6c, 0x6c, 0x18, 0x04, 0x20, 0x01, 0x28, 0x03, 0x52, 0x04, 0x73, 0x65, 0x6c, 0x6c, 0x12,
+	0x14, 0x0a, 0x05, 0x70, 0x72, 0x69, 0x63, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05,
+	0x70, 0x72, 0x69, 0x63, 0x65, 0x12, 0x20, 0x0a, 0x0c, 0x76, 0x77, 0x5f, 0x62, 0x75, 0x79, 0x5f,
+	0x70, 0x72, 0x69, 0x63, 0x65, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x76, 0x77, 0x42,
+	0x75, 0x79, 0x50, 0x72, 0x69, 0x63, 0x65, 0x12, 0x22, 0x0a, 0x0d, 0x76, 0x77, 0x5f, 0x73, 0x65,
+	0x6c, 0x6c, 0x5f, 0x70, 0x72, 0x69, 0x63, 0x65, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b,
+	0x76, 0x77, 0x53, 0x65, 0x6c, 0x6c, 0x50, 0x72, 0x69, 0x63, 0x65, 0x22, 0x68, 0x0a, 0x0f, 0x4d,
+	0x61, 0x72, 0x6b, 0x65, 0x74, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x1b,
+	0x0a, 0x09, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x08, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x49, 0x64, 0x12, 0x38, 0x0a, 0x09, 0x70,
+	0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1a,
+	0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76,
+	0x31, 0x2e, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x09, 0x70, 0x6f, 0x73, 0x69,
+	0x74, 0x69, 0x6f, 0x6e, 0x73, 0x22, 0x4c, 0x0a, 0x08, 0x41, 0x70, 0x70, 0x53, 0x74, 0x61, 0x74,
+	0x65, 0x12, 0x16, 0x0a, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x04, 0x52, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x62, 0x6c, 0x6f,
+	0x63, 0x6b, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x12,
+	0x12, 0x0a, 0x04, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x52, 0x04, 0x74,
+	0x69, 0x6d, 0x65, 0x22, 0xc3, 0x01, 0x0a, 0x0a, 0x45, 0x70, 0x6f, 0x63, 0x68, 0x53, 0x74, 0x61,
+	0x74, 0x65, 0x12, 0x10, 0x0a, 0x03, 0x73, 0x65, 0x71, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52,
+	0x03, 0x73, 0x65, 0x71, 0x12, 0x1d, 0x0a, 0x0a, 0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x74, 0x69,
+	0x6d, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x52, 0x09, 0x73, 0x74, 0x61, 0x72, 0x74, 0x54,
+	0x69, 0x6d, 0x65, 0x12, 0x1f, 0x0a, 0x0b, 0x65, 0x78, 0x70, 0x69, 0x72, 0x65, 0x5f, 0x74, 0x69,
+	0x6d, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0a, 0x65, 0x78, 0x70, 0x69, 0x72, 0x65,
+	0x54, 0x69, 0x6d, 0x65, 0x12, 0x36, 0x0a, 0x18, 0x72, 0x65, 0x61, 0x64, 0x79, 0x5f, 0x74, 0x6f,
+	0x5f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x6e, 0x65, 0x77, 0x5f, 0x65, 0x70, 0x6f, 0x63, 0x68,
+	0x18, 0x06, 0x20, 0x01, 0x28, 0x08, 0x52, 0x14, 0x72, 0x65, 0x61, 0x64, 0x79, 0x54, 0x6f, 0x53,
+	0x74, 0x61, 0x72, 0x74, 0x4e, 0x65, 0x77, 0x45, 0x70, 0x6f, 0x63, 0x68, 0x12, 0x2b, 0x0a, 0x12,
+	0x72, 0x65, 0x61, 0x64, 0x79, 0x5f, 0x74, 0x6f, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x65, 0x70, 0x6f,
+	0x63, 0x68, 0x18, 0x07, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0f, 0x72, 0x65, 0x61, 0x64, 0x79, 0x54,
+	0x6f, 0x45, 0x6e, 0x64, 0x45, 0x70, 0x6f, 0x63, 0x68, 0x2a, 0x60, 0x0a, 0x06, 0x46, 0x6f, 0x72,
+	0x6d, 0x61, 0x74, 0x12, 0x16, 0x0a, 0x12, 0x46, 0x4f, 0x52, 0x4d, 0x41, 0x54, 0x5f, 0x55, 0x4e,
+	0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x10, 0x0a, 0x0c, 0x46,
+	0x4f, 0x52, 0x4d, 0x41, 0x54, 0x5f, 0x50, 0x52, 0x4f, 0x54, 0x4f, 0x10, 0x01, 0x12, 0x1b, 0x0a,
+	0x17, 0x46, 0x4f, 0x52, 0x4d, 0x41, 0x54, 0x5f, 0x50, 0x52, 0x4f, 0x54, 0x4f, 0x5f, 0x43, 0x4f,
+	0x4d, 0x50, 0x52, 0x45, 0x53, 0x53, 0x45, 0x44, 0x10, 0x02, 0x12, 0x0f, 0x0a, 0x0b, 0x46, 0x4f,
+	0x52, 0x4d, 0x41, 0x54, 0x5f, 0x4a, 0x53, 0x4f, 0x4e, 0x10, 0x03, 0x42, 0x32, 0x5a, 0x30, 0x63,
+	0x6f, 0x64, 0x65, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c,
+	0x2e, 0x69, 0x6f, 0x2f, 0x73, 0x64, 0x6b, 0x2d, 0x67, 0x6f, 0x6c, 0x61, 0x6e, 0x67, 0x2f, 0x76,
+	0x65, 0x67, 0x61, 0x2f, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2f, 0x76, 0x31, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -769,36 +3424,141 @@ func file_vega_snapshot_v1_snapshot_proto_rawDescGZIP() []byte {
 	return file_vega_snapshot_v1_snapshot_proto_rawDescData
 }
 
-var file_vega_snapshot_v1_snapshot_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_vega_snapshot_v1_snapshot_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_vega_snapshot_v1_snapshot_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
 var file_vega_snapshot_v1_snapshot_proto_goTypes = []interface{}{
-	(*Snapshot)(nil),              // 0: vega.snapshot.v1.Snapshot
-	(*Checkpoint)(nil),            // 1: vega.snapshot.v1.Checkpoint
-	(*AssetEntry)(nil),            // 2: vega.snapshot.v1.AssetEntry
-	(*Assets)(nil),                // 3: vega.snapshot.v1.Assets
-	(*AssetBalance)(nil),          // 4: vega.snapshot.v1.AssetBalance
-	(*Collateral)(nil),            // 5: vega.snapshot.v1.Collateral
-	(*NetParams)(nil),             // 6: vega.snapshot.v1.NetParams
-	(*Proposals)(nil),             // 7: vega.snapshot.v1.Proposals
-	(*DelegateEntry)(nil),         // 8: vega.snapshot.v1.DelegateEntry
-	(*Delegate)(nil),              // 9: vega.snapshot.v1.Delegate
-	(*Block)(nil),                 // 10: vega.snapshot.v1.Block
-	(*vega.AssetDetails)(nil),     // 11: vega.AssetDetails
-	(*vega.NetworkParameter)(nil), // 12: vega.NetworkParameter
-	(*vega.Proposal)(nil),         // 13: vega.Proposal
+	(Format)(0),                         // 0: vega.snapshot.v1.Format
+	(*Snapshot)(nil),                    // 1: vega.snapshot.v1.Snapshot
+	(*NodeHash)(nil),                    // 2: vega.snapshot.v1.NodeHash
+	(*Metadata)(nil),                    // 3: vega.snapshot.v1.Metadata
+	(*Chunk)(nil),                       // 4: vega.snapshot.v1.Chunk
+	(*Payload)(nil),                     // 5: vega.snapshot.v1.Payload
+	(*CollateralAccounts)(nil),          // 6: vega.snapshot.v1.CollateralAccounts
+	(*CollateralAssets)(nil),            // 7: vega.snapshot.v1.CollateralAssets
+	(*ActiveAssets)(nil),                // 8: vega.snapshot.v1.ActiveAssets
+	(*PendingAssets)(nil),               // 9: vega.snapshot.v1.PendingAssets
+	(*Withdrawal)(nil),                  // 10: vega.snapshot.v1.Withdrawal
+	(*Deposit)(nil),                     // 11: vega.snapshot.v1.Deposit
+	(*TxRef)(nil),                       // 12: vega.snapshot.v1.TxRef
+	(*BankingWithdrawals)(nil),          // 13: vega.snapshot.v1.BankingWithdrawals
+	(*BankingDeposits)(nil),             // 14: vega.snapshot.v1.BankingDeposits
+	(*BankingSeen)(nil),                 // 15: vega.snapshot.v1.BankingSeen
+	(*Checkpoint)(nil),                  // 16: vega.snapshot.v1.Checkpoint
+	(*DelegationActive)(nil),            // 17: vega.snapshot.v1.DelegationActive
+	(*DelegationPending)(nil),           // 18: vega.snapshot.v1.DelegationPending
+	(*DelegationAuto)(nil),              // 19: vega.snapshot.v1.DelegationAuto
+	(*PendingProposal)(nil),             // 20: vega.snapshot.v1.PendingProposal
+	(*GovernanceEnacted)(nil),           // 21: vega.snapshot.v1.GovernanceEnacted
+	(*GovernanceActive)(nil),            // 22: vega.snapshot.v1.GovernanceActive
+	(*StakingAccount)(nil),              // 23: vega.snapshot.v1.StakingAccount
+	(*StakingAccounts)(nil),             // 24: vega.snapshot.v1.StakingAccounts
+	(*MatchingBook)(nil),                // 25: vega.snapshot.v1.MatchingBook
+	(*NetParams)(nil),                   // 26: vega.snapshot.v1.NetParams
+	(*DecimalMap)(nil),                  // 27: vega.snapshot.v1.DecimalMap
+	(*TimePrice)(nil),                   // 28: vega.snapshot.v1.TimePrice
+	(*PriceVolume)(nil),                 // 29: vega.snapshot.v1.PriceVolume
+	(*PriceRange)(nil),                  // 30: vega.snapshot.v1.PriceRange
+	(*PriceBound)(nil),                  // 31: vega.snapshot.v1.PriceBound
+	(*PriceRangeCache)(nil),             // 32: vega.snapshot.v1.PriceRangeCache
+	(*PriceMonitor)(nil),                // 33: vega.snapshot.v1.PriceMonitor
+	(*AuctionState)(nil),                // 34: vega.snapshot.v1.AuctionState
+	(*EquityShareLP)(nil),               // 35: vega.snapshot.v1.EquityShareLP
+	(*EquityShare)(nil),                 // 36: vega.snapshot.v1.EquityShare
+	(*Market)(nil),                      // 37: vega.snapshot.v1.Market
+	(*ExecutionMarkets)(nil),            // 38: vega.snapshot.v1.ExecutionMarkets
+	(*Position)(nil),                    // 39: vega.snapshot.v1.Position
+	(*MarketPositions)(nil),             // 40: vega.snapshot.v1.MarketPositions
+	(*AppState)(nil),                    // 41: vega.snapshot.v1.AppState
+	(*EpochState)(nil),                  // 42: vega.snapshot.v1.EpochState
+	(*vega.Account)(nil),                // 43: vega.Account
+	(*vega.Asset)(nil),                  // 44: vega.Asset
+	(*vega.Withdrawal)(nil),             // 45: vega.Withdrawal
+	(*vega.Deposit)(nil),                // 46: vega.Deposit
+	(*vega.Delegation)(nil),             // 47: vega.Delegation
+	(*vega.Proposal)(nil),               // 48: vega.Proposal
+	(*vega.Vote)(nil),                   // 49: vega.Vote
+	(*v1.StakeLinking)(nil),             // 50: vega.events.v1.StakeLinking
+	(*vega.Order)(nil),                  // 51: vega.Order
+	(*vega.NetworkParameter)(nil),       // 52: vega.NetworkParameter
+	(*vega.PriceMonitoringTrigger)(nil), // 53: vega.PriceMonitoringTrigger
+	(vega.Market_TradingMode)(0),        // 54: vega.Market.TradingMode
+	(vega.AuctionTrigger)(0),            // 55: vega.AuctionTrigger
+	(*vega.AuctionDuration)(nil),        // 56: vega.AuctionDuration
+	(*vega.Market)(nil),                 // 57: vega.Market
 }
 var file_vega_snapshot_v1_snapshot_proto_depIdxs = []int32{
-	11, // 0: vega.snapshot.v1.AssetEntry.asset_details:type_name -> vega.AssetDetails
-	2,  // 1: vega.snapshot.v1.Assets.assets:type_name -> vega.snapshot.v1.AssetEntry
-	4,  // 2: vega.snapshot.v1.Collateral.balances:type_name -> vega.snapshot.v1.AssetBalance
-	12, // 3: vega.snapshot.v1.NetParams.params:type_name -> vega.NetworkParameter
-	13, // 4: vega.snapshot.v1.Proposals.proposals:type_name -> vega.Proposal
-	8,  // 5: vega.snapshot.v1.Delegate.active:type_name -> vega.snapshot.v1.DelegateEntry
-	8,  // 6: vega.snapshot.v1.Delegate.pending:type_name -> vega.snapshot.v1.DelegateEntry
-	7,  // [7:7] is the sub-list for method output_type
-	7,  // [7:7] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	0,  // 0: vega.snapshot.v1.Snapshot.format:type_name -> vega.snapshot.v1.Format
+	2,  // 1: vega.snapshot.v1.Metadata.node_hashes:type_name -> vega.snapshot.v1.NodeHash
+	5,  // 2: vega.snapshot.v1.Chunk.data:type_name -> vega.snapshot.v1.Payload
+	8,  // 3: vega.snapshot.v1.Payload.active_assets:type_name -> vega.snapshot.v1.ActiveAssets
+	9,  // 4: vega.snapshot.v1.Payload.pending_assets:type_name -> vega.snapshot.v1.PendingAssets
+	13, // 5: vega.snapshot.v1.Payload.banking_withdrawals:type_name -> vega.snapshot.v1.BankingWithdrawals
+	14, // 6: vega.snapshot.v1.Payload.banking_deposits:type_name -> vega.snapshot.v1.BankingDeposits
+	15, // 7: vega.snapshot.v1.Payload.banking_seen:type_name -> vega.snapshot.v1.BankingSeen
+	16, // 8: vega.snapshot.v1.Payload.checkpoint:type_name -> vega.snapshot.v1.Checkpoint
+	6,  // 9: vega.snapshot.v1.Payload.collateral_accounts:type_name -> vega.snapshot.v1.CollateralAccounts
+	7,  // 10: vega.snapshot.v1.Payload.collateral_assets:type_name -> vega.snapshot.v1.CollateralAssets
+	17, // 11: vega.snapshot.v1.Payload.delegation_active:type_name -> vega.snapshot.v1.DelegationActive
+	18, // 12: vega.snapshot.v1.Payload.delegation_pending:type_name -> vega.snapshot.v1.DelegationPending
+	19, // 13: vega.snapshot.v1.Payload.delegation_auto:type_name -> vega.snapshot.v1.DelegationAuto
+	22, // 14: vega.snapshot.v1.Payload.governance_active:type_name -> vega.snapshot.v1.GovernanceActive
+	21, // 15: vega.snapshot.v1.Payload.governance_enacted:type_name -> vega.snapshot.v1.GovernanceEnacted
+	24, // 16: vega.snapshot.v1.Payload.staking_accounts:type_name -> vega.snapshot.v1.StakingAccounts
+	25, // 17: vega.snapshot.v1.Payload.matching_book:type_name -> vega.snapshot.v1.MatchingBook
+	26, // 18: vega.snapshot.v1.Payload.network_parameters:type_name -> vega.snapshot.v1.NetParams
+	38, // 19: vega.snapshot.v1.Payload.execution_markets:type_name -> vega.snapshot.v1.ExecutionMarkets
+	40, // 20: vega.snapshot.v1.Payload.market_positions:type_name -> vega.snapshot.v1.MarketPositions
+	41, // 21: vega.snapshot.v1.Payload.app_state:type_name -> vega.snapshot.v1.AppState
+	42, // 22: vega.snapshot.v1.Payload.epoch:type_name -> vega.snapshot.v1.EpochState
+	43, // 23: vega.snapshot.v1.CollateralAccounts.accounts:type_name -> vega.Account
+	44, // 24: vega.snapshot.v1.CollateralAssets.assets:type_name -> vega.Asset
+	44, // 25: vega.snapshot.v1.ActiveAssets.assets:type_name -> vega.Asset
+	44, // 26: vega.snapshot.v1.PendingAssets.assets:type_name -> vega.Asset
+	45, // 27: vega.snapshot.v1.Withdrawal.withdrawal:type_name -> vega.Withdrawal
+	46, // 28: vega.snapshot.v1.Deposit.deposit:type_name -> vega.Deposit
+	10, // 29: vega.snapshot.v1.BankingWithdrawals.withdrawals:type_name -> vega.snapshot.v1.Withdrawal
+	11, // 30: vega.snapshot.v1.BankingDeposits.deposit:type_name -> vega.snapshot.v1.Deposit
+	12, // 31: vega.snapshot.v1.BankingSeen.refs:type_name -> vega.snapshot.v1.TxRef
+	47, // 32: vega.snapshot.v1.DelegationActive.delegations:type_name -> vega.Delegation
+	47, // 33: vega.snapshot.v1.DelegationPending.delegations:type_name -> vega.Delegation
+	47, // 34: vega.snapshot.v1.DelegationPending.undelegation:type_name -> vega.Delegation
+	48, // 35: vega.snapshot.v1.PendingProposal.proposal:type_name -> vega.Proposal
+	49, // 36: vega.snapshot.v1.PendingProposal.yes:type_name -> vega.Vote
+	49, // 37: vega.snapshot.v1.PendingProposal.no:type_name -> vega.Vote
+	49, // 38: vega.snapshot.v1.PendingProposal.invalid:type_name -> vega.Vote
+	48, // 39: vega.snapshot.v1.GovernanceEnacted.proposals:type_name -> vega.Proposal
+	20, // 40: vega.snapshot.v1.GovernanceActive.proposals:type_name -> vega.snapshot.v1.PendingProposal
+	50, // 41: vega.snapshot.v1.StakingAccount.events:type_name -> vega.events.v1.StakeLinking
+	23, // 42: vega.snapshot.v1.StakingAccounts.accounts:type_name -> vega.snapshot.v1.StakingAccount
+	51, // 43: vega.snapshot.v1.MatchingBook.buy:type_name -> vega.Order
+	51, // 44: vega.snapshot.v1.MatchingBook.sell:type_name -> vega.Order
+	52, // 45: vega.snapshot.v1.NetParams.params:type_name -> vega.NetworkParameter
+	53, // 46: vega.snapshot.v1.PriceBound.trigger:type_name -> vega.PriceMonitoringTrigger
+	31, // 47: vega.snapshot.v1.PriceRangeCache.bound:type_name -> vega.snapshot.v1.PriceBound
+	30, // 48: vega.snapshot.v1.PriceRangeCache.range:type_name -> vega.snapshot.v1.PriceRange
+	27, // 49: vega.snapshot.v1.PriceMonitor.fp_horizons:type_name -> vega.snapshot.v1.DecimalMap
+	31, // 50: vega.snapshot.v1.PriceMonitor.bounds:type_name -> vega.snapshot.v1.PriceBound
+	32, // 51: vega.snapshot.v1.PriceMonitor.price_range_cache:type_name -> vega.snapshot.v1.PriceRangeCache
+	27, // 52: vega.snapshot.v1.PriceMonitor.ref_price_cache:type_name -> vega.snapshot.v1.DecimalMap
+	54, // 53: vega.snapshot.v1.AuctionState.mode:type_name -> vega.Market.TradingMode
+	54, // 54: vega.snapshot.v1.AuctionState.default_mode:type_name -> vega.Market.TradingMode
+	55, // 55: vega.snapshot.v1.AuctionState.trigger:type_name -> vega.AuctionTrigger
+	56, // 56: vega.snapshot.v1.AuctionState.end:type_name -> vega.AuctionDuration
+	55, // 57: vega.snapshot.v1.AuctionState.extension:type_name -> vega.AuctionTrigger
+	35, // 58: vega.snapshot.v1.EquityShare.lps:type_name -> vega.snapshot.v1.EquityShareLP
+	57, // 59: vega.snapshot.v1.Market.market:type_name -> vega.Market
+	33, // 60: vega.snapshot.v1.Market.price_monitor:type_name -> vega.snapshot.v1.PriceMonitor
+	34, // 61: vega.snapshot.v1.Market.auction_state:type_name -> vega.snapshot.v1.AuctionState
+	51, // 62: vega.snapshot.v1.Market.pegged_orders:type_name -> vega.Order
+	51, // 63: vega.snapshot.v1.Market.expiring_orders:type_name -> vega.Order
+	36, // 64: vega.snapshot.v1.Market.equity_share:type_name -> vega.snapshot.v1.EquityShare
+	37, // 65: vega.snapshot.v1.ExecutionMarkets.markets:type_name -> vega.snapshot.v1.Market
+	39, // 66: vega.snapshot.v1.MarketPositions.positions:type_name -> vega.snapshot.v1.Position
+	67, // [67:67] is the sub-list for method output_type
+	67, // [67:67] is the sub-list for method input_type
+	67, // [67:67] is the sub-list for extension type_name
+	67, // [67:67] is the sub-list for extension extendee
+	0,  // [0:67] is the sub-list for field type_name
 }
 
 func init() { file_vega_snapshot_v1_snapshot_proto_init() }
@@ -820,7 +3580,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Checkpoint); i {
+			switch v := v.(*NodeHash); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -832,7 +3592,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AssetEntry); i {
+			switch v := v.(*Metadata); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -844,7 +3604,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Assets); i {
+			switch v := v.(*Chunk); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -856,7 +3616,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AssetBalance); i {
+			switch v := v.(*Payload); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -868,7 +3628,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Collateral); i {
+			switch v := v.(*CollateralAccounts); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -880,7 +3640,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NetParams); i {
+			switch v := v.(*CollateralAssets); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -892,7 +3652,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Proposals); i {
+			switch v := v.(*ActiveAssets); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -904,7 +3664,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DelegateEntry); i {
+			switch v := v.(*PendingAssets); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -916,7 +3676,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Delegate); i {
+			switch v := v.(*Withdrawal); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -928,7 +3688,379 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Block); i {
+			switch v := v.(*Deposit); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TxRef); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BankingWithdrawals); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BankingDeposits); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BankingSeen); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Checkpoint); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DelegationActive); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DelegationPending); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DelegationAuto); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PendingProposal); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GovernanceEnacted); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GovernanceActive); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*StakingAccount); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*StakingAccounts); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MatchingBook); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*NetParams); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[26].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DecimalMap); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[27].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TimePrice); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[28].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PriceVolume); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[29].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PriceRange); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[30].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PriceBound); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[31].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PriceRangeCache); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[32].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PriceMonitor); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[33].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*AuctionState); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[34].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*EquityShareLP); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[35].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*EquityShare); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[36].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Market); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[37].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ExecutionMarkets); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[38].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Position); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[39].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MarketPositions); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[40].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*AppState); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[41].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*EpochState); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -940,18 +4072,41 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 	}
+	file_vega_snapshot_v1_snapshot_proto_msgTypes[4].OneofWrappers = []interface{}{
+		(*Payload_ActiveAssets)(nil),
+		(*Payload_PendingAssets)(nil),
+		(*Payload_BankingWithdrawals)(nil),
+		(*Payload_BankingDeposits)(nil),
+		(*Payload_BankingSeen)(nil),
+		(*Payload_Checkpoint)(nil),
+		(*Payload_CollateralAccounts)(nil),
+		(*Payload_CollateralAssets)(nil),
+		(*Payload_DelegationActive)(nil),
+		(*Payload_DelegationPending)(nil),
+		(*Payload_DelegationAuto)(nil),
+		(*Payload_GovernanceActive)(nil),
+		(*Payload_GovernanceEnacted)(nil),
+		(*Payload_StakingAccounts)(nil),
+		(*Payload_MatchingBook)(nil),
+		(*Payload_NetworkParameters)(nil),
+		(*Payload_ExecutionMarkets)(nil),
+		(*Payload_MarketPositions)(nil),
+		(*Payload_AppState)(nil),
+		(*Payload_Epoch)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_vega_snapshot_v1_snapshot_proto_rawDesc,
-			NumEnums:      0,
-			NumMessages:   11,
+			NumEnums:      1,
+			NumMessages:   42,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_vega_snapshot_v1_snapshot_proto_goTypes,
 		DependencyIndexes: file_vega_snapshot_v1_snapshot_proto_depIdxs,
+		EnumInfos:         file_vega_snapshot_v1_snapshot_proto_enumTypes,
 		MessageInfos:      file_vega_snapshot_v1_snapshot_proto_msgTypes,
 	}.Build()
 	File_vega_snapshot_v1_snapshot_proto = out.File
