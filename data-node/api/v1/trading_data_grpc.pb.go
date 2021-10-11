@@ -27,6 +27,10 @@ type TradingDataServiceClient interface {
 	// Can be filtered by asset, there will be 1 infrastructure fee account per
 	// asset in the network.
 	FeeInfrastructureAccounts(ctx context.Context, in *FeeInfrastructureAccountsRequest, opts ...grpc.CallOption) (*FeeInfrastructureAccountsResponse, error)
+	// Get a list of accounts holding rewards pools
+	// Can be filtered by asset, there will be 1 reward pool account per
+	// asset in the network.
+	GlobalRewardPoolAccounts(ctx context.Context, in *GlobalRewardPoolAccountsRequest, opts ...grpc.CallOption) (*GlobalRewardPoolAccountsResponse, error)
 	// Get a list of Candles by Market
 	Candles(ctx context.Context, in *CandlesRequest, opts ...grpc.CallOption) (*CandlesResponse, error)
 	// Get Market Data by Market ID
@@ -193,6 +197,15 @@ func (c *tradingDataServiceClient) PartyAccounts(ctx context.Context, in *PartyA
 func (c *tradingDataServiceClient) FeeInfrastructureAccounts(ctx context.Context, in *FeeInfrastructureAccountsRequest, opts ...grpc.CallOption) (*FeeInfrastructureAccountsResponse, error) {
 	out := new(FeeInfrastructureAccountsResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v1.TradingDataService/FeeInfrastructureAccounts", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) GlobalRewardPoolAccounts(ctx context.Context, in *GlobalRewardPoolAccountsRequest, opts ...grpc.CallOption) (*GlobalRewardPoolAccountsResponse, error) {
+	out := new(GlobalRewardPoolAccountsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v1.TradingDataService/GlobalRewardPoolAccounts", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1167,6 +1180,10 @@ type TradingDataServiceServer interface {
 	// Can be filtered by asset, there will be 1 infrastructure fee account per
 	// asset in the network.
 	FeeInfrastructureAccounts(context.Context, *FeeInfrastructureAccountsRequest) (*FeeInfrastructureAccountsResponse, error)
+	// Get a list of accounts holding rewards pools
+	// Can be filtered by asset, there will be 1 reward pool account per
+	// asset in the network.
+	GlobalRewardPoolAccounts(context.Context, *GlobalRewardPoolAccountsRequest) (*GlobalRewardPoolAccountsResponse, error)
 	// Get a list of Candles by Market
 	Candles(context.Context, *CandlesRequest) (*CandlesResponse, error)
 	// Get Market Data by Market ID
@@ -1317,6 +1334,9 @@ func (UnimplementedTradingDataServiceServer) PartyAccounts(context.Context, *Par
 }
 func (UnimplementedTradingDataServiceServer) FeeInfrastructureAccounts(context.Context, *FeeInfrastructureAccountsRequest) (*FeeInfrastructureAccountsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FeeInfrastructureAccounts not implemented")
+}
+func (UnimplementedTradingDataServiceServer) GlobalRewardPoolAccounts(context.Context, *GlobalRewardPoolAccountsRequest) (*GlobalRewardPoolAccountsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GlobalRewardPoolAccounts not implemented")
 }
 func (UnimplementedTradingDataServiceServer) Candles(context.Context, *CandlesRequest) (*CandlesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Candles not implemented")
@@ -1585,6 +1605,24 @@ func _TradingDataService_FeeInfrastructureAccounts_Handler(srv interface{}, ctx 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TradingDataServiceServer).FeeInfrastructureAccounts(ctx, req.(*FeeInfrastructureAccountsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_GlobalRewardPoolAccounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GlobalRewardPoolAccountsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GlobalRewardPoolAccounts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v1.TradingDataService/GlobalRewardPoolAccounts",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GlobalRewardPoolAccounts(ctx, req.(*GlobalRewardPoolAccountsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2881,6 +2919,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FeeInfrastructureAccounts",
 			Handler:    _TradingDataService_FeeInfrastructureAccounts_Handler,
+		},
+		{
+			MethodName: "GlobalRewardPoolAccounts",
+			Handler:    _TradingDataService_GlobalRewardPoolAccounts_Handler,
 		},
 		{
 			MethodName: "Candles",
