@@ -9,6 +9,7 @@ import "vega/assets.proto";
 import "vega/chain_events.proto";
 import "vega/governance.proto";
 import "vega/events/v1/events.proto";
+import "vega/commands/v1/validator_commands.proto";
 
 enum Format {
   // Default value, always invalid
@@ -73,10 +74,86 @@ message Payload {
     MarketPositions market_positions = 19;
     AppState app_state = 20;
     EpochState epoch = 21;
-    ExecutionIDGenerator execution_id_generator = 22;
     RewardsPendingPayouts rewards_pending_payouts = 23;
     GovernanceNode governance_node = 24;
+    LimitState limit_state = 25;
+    VoteSpamPolicy vote_spam_policy = 26;
+    SimpleSpamPolicy simple_spam_policy = 27;
+    Notary notary = 28;
+    ReplayProtection replay_protection = 29;
+    FutureState  future_state = 30;
+    EventForwarder event_forwarder = 31;
+    StakeVerifierDeposited stake_verifier_deposited = 32;
+    StakeVerifierRemoved stake_verifier_removed = 33;
+    Witness witness = 34;
+    DelegationLastReconciliationTime delegation_last_reconciliation_time = 35;
+    Topology topology = 36;
+    OracleDataBatch oracle_data = 37;
+    LiquidityParameters liquidity_parameters = 38;
+    LiquidityPendingProvisions liquidity_pending_provisions = 39;
+    LiquidityPartiesLiquidityOrders liquidity_parties_liquidity_orders = 40;
+    LiquidityPartiesOrders liquidity_parties_orders = 41;
+    LiquidityProvisions liquidity_provisions = 42;
+    LiquiditySupplied liquidity_supplied= 43;
+    LiquidityTarget liquidity_target= 44;
   }
+}
+
+message TimestampedOpenInterest {
+  uint64 open_interest = 1;
+  int64 time = 2;
+}
+
+message LiquidityTarget {
+  string market_id = 1;
+  int64 current_time = 2;
+  int64 scheduled_truncate = 3;
+  repeated uint64 current_open_interests = 4;
+  repeated TimestampedOpenInterest previous_open_interests = 5;
+  TimestampedOpenInterest max_open_interests = 6;
+}
+
+message LiquidityPriceProbabilityPair {
+  string price = 1;
+  string probability = 2;
+}
+
+message LiquiditySupplied {
+   string market_id = 1;
+   string cached_min = 2;
+   string cached_max = 3;
+   repeated LiquidityPriceProbabilityPair bid_cache = 4;
+   repeated LiquidityPriceProbabilityPair ask_cache = 5;
+}
+
+message OracleDataBatch {
+  repeated OracleData oracle_data = 1;
+}
+
+message OracleData {
+  repeated string pub_keys = 1;
+  repeated OracleDataPair data = 2;
+}
+
+message OracleDataPair {
+  string key = 1;
+  string value = 2;
+}
+
+message Witness {
+  repeated Resource resources = 1;
+  repeated string need_resend_resources = 2;
+}
+
+message Resource {
+  string id = 1;
+  int64 check_until = 2;
+  repeated string votes = 3;
+  uint32 state = 4;
+}
+
+message EventForwarder {
+  repeated vega.commands.v1.ChainEvent acked_events = 1;
 }
 
 message CollateralAccounts {
@@ -143,6 +220,10 @@ message BankingAssetActions {
 
 message Checkpoint {
   int64 next_cp = 1;
+}
+
+message DelegationLastReconciliationTime {
+  int64 last_reconciliation_time = 1;
 }
 
 message DelegationActive {
@@ -233,6 +314,16 @@ message PriceRangeCache {
   PriceRange range = 2;
 }
 
+message CurrentPrice {
+  string price = 1;
+  uint64 volume = 2;
+}
+
+message PastPrice {
+  int64 time = 1;
+  string volume_weighted_price = 2;
+}
+
 message PriceMonitor {
   bool initialised = 3;
   repeated DecimalMap fp_horizons = 4;
@@ -243,6 +334,8 @@ message PriceMonitor {
   repeated PriceRangeCache price_range_cache = 9;
   int64 ref_price_cache_time = 10;
   repeated DecimalMap ref_price_cache = 11;
+  repeated CurrentPrice prices_now = 12;
+  repeated PastPrice prices_past = 13;
 }
 
 message AuctionState {
@@ -287,6 +380,12 @@ message Market {
 
 message ExecutionMarkets {
   repeated Market markets = 1;
+  // Which batch are we on
+  uint64 batches = 2;
+  // How many orders in this batch
+  uint64 orders = 3;
+  // How many proposals in this batch
+  uint64 proposals = 4;
 }
 
 message Position {
@@ -324,27 +423,177 @@ message EpochState {
   bool ready_to_end_epoch = 7;
 }
 
-// State of the ID generator used for creating order IDs
-message ExecutionIDGenerator {
-  // Which batch are we on
-  uint64 batches = 1;
-  // How many orders in this batch
-  uint64 orders = 2;
-  // How many proposals in this batch
-  uint64 proposals = 3;
-}
-
 message RewardsPendingPayouts {
-  int64 reward_time = 1;
-  string from_account = 2;
-  string asset = 3;
-  repeated RewardPartyAmount reward_party_amount = 4;
-  string total_reward = 5;
-  string epoch_seq = 6;
-  int64 timestamp = 7;
+  repeated ScheduledRewardsPayout scheduled_rewards_payout = 1;
 }
 
-message RewardPartyAmount {
+message ScheduledRewardsPayout {
+  int64 payout_time = 1;
+  repeated RewardsPayout rewards_payout = 2;
+}
+
+message RewardsPayout {
+  string from_account = 1;
+  string asset = 2;
+  repeated RewardsPartyAmount reward_party_amount = 3;
+  string total_reward = 4;
+  string epoch_seq = 5;
+  int64 timestamp = 6;
+}
+
+message RewardsPartyAmount {
   string party = 1;
   string amount = 2;
+}
+
+// LimitState details
+message LimitState {
+  // Number of blocks into the boostrapping phase
+  uint32 block_count = 1;
+  // whether the limit on market proposals has been lifted
+  bool can_propose_market = 2;
+  // whether the limit on asset proposals has been lifted
+  bool can_propose_asset = 3;
+  // whether the genesis state is loaded
+  bool genesis_loaded = 4;
+  // fields derived from the genesis state
+  bool  propose_market_enabled = 5;
+  bool  propose_asset_enabled = 6;
+  int64 propose_market_enabled_from = 7;
+  int64 propose_asset_enabled_from = 8;
+
+}
+
+message VoteSpamPolicy {
+  repeated PartyProposalVoteCount party_to_vote = 1;
+  repeated BannedParty banned_parties = 2;
+  repeated PartyTokenBalance token_balance = 3;
+  repeated BlockRejectStats recent_blocks_reject_stats = 4;
+  uint64 current_block_index = 5;
+  uint64 last_increase_block = 6;
+  uint64 current_epoch_seq = 7;
+  string min_voting_tokens_factor = 8;
+}
+
+message PartyProposalVoteCount {
+  string party = 1;
+  string proposal = 2;
+  uint64 count = 3;
+}
+
+message BannedParty {
+  string party = 1;
+  uint64 until_epoch = 2;
+}
+
+message PartyTokenBalance {
+  string party = 1;
+  string balance = 2;
+}
+
+message BlockRejectStats {
+  uint64 rejected = 1;
+  uint64 total = 2;
+}
+
+message SpamPartyTransactionCount {
+  string party = 1;
+  uint64 count = 2;
+}
+
+message SimpleSpamPolicy {
+  string policy_name = 1;
+  repeated SpamPartyTransactionCount party_to_count = 2;
+  repeated BannedParty banned_parties = 3;
+  repeated PartyTokenBalance token_balance = 4;
+  uint64 current_epoch_seq = 5;
+}
+
+message NotarySigs {
+  string id = 1;
+  int32 kind = 2;
+  string node = 3;
+  string sig = 4;
+}
+
+message Notary {
+  repeated NotarySigs notary_sigs = 1;
+}
+
+message ReplayProtection {
+  repeated RecentBlocksTransactions recent_blocks_transactions = 1;
+}
+
+message RecentBlocksTransactions {
+  repeated string tx = 1;
+}
+
+message FutureState {
+  string market_id = 1;
+  string settlement_price = 2;
+  bool trading_terminated = 3;
+}
+
+message StakeVerifierDeposited {
+  repeated StakeVerifierPending pending_deposited = 1;
+}
+
+message StakeVerifierRemoved {
+  repeated StakeVerifierPending pending_removed = 1;
+}
+
+message StakeVerifierPending {
+  string ethereum_address = 1;
+  string vega_public_key = 2;
+  string amount = 3;
+  int64 block_time = 4;
+  uint64 block_number = 5;
+  uint64 log_index = 6;
+  string tx_id = 7;
+  string id = 8;
+}
+
+message PendingKeyRotation {
+  uint64 block_height = 1;
+  string node_id = 2;
+  string new_pub_key = 3;
+  uint32 new_pub_key_index = 4;
+}
+
+message Topology {
+  repeated vega.events.v1.ValidatorUpdate validator_data = 1;
+  repeated string chain_keys = 2;
+  repeated PendingKeyRotation pending_pub_key_rotations = 3;
+}
+
+message LiquidityParameters {
+  string max_fee = 1;
+  string max_shape_size = 2;
+  string stake_to_obligation_factor = 3;
+  // required for key generation
+  string market_id = 4;
+}
+
+message LiquidityPendingProvisions {
+  repeated string pending_provisions = 1;
+  // required for key generation
+  string market_id = 2;
+}
+
+message LiquidityPartiesLiquidityOrders {
+  repeated vega.Order orders = 1;
+  // required for key generation
+  string market_id = 2;
+}
+
+message LiquidityPartiesOrders {
+  repeated vega.Order orders = 1;
+  // required for key generation
+  string market_id = 2;
+}
+
+message LiquidityProvisions {
+  repeated vega.LiquidityProvision liquidity_provisions = 1;
+  // required for key generation
+  string market_id = 2;
 }

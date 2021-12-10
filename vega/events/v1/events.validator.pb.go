@@ -25,6 +25,9 @@ func (this *StakeLinking) Validate() error {
 func (this *CheckpointEvent) Validate() error {
 	return nil
 }
+func (this *StreamStartEvent) Validate() error {
+	return nil
+}
 func (this *RewardPayoutEvent) Validate() error {
 	return nil
 }
@@ -155,6 +158,9 @@ func (this *AuctionEvent) Validate() error {
 	return nil
 }
 func (this *ValidatorUpdate) Validate() error {
+	return nil
+}
+func (this *KeyRotation) Validate() error {
 	return nil
 }
 func (this *BusEvent) Validate() error {
@@ -393,6 +399,13 @@ func (this *BusEvent) Validate() error {
 		if oneOfNester.Checkpoint != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Checkpoint); err != nil {
 				return github_com_mwitkow_go_proto_validators.FieldError("Checkpoint", err)
+			}
+		}
+	}
+	if oneOfNester, ok := this.GetEvent().(*BusEvent_KeyRotation); ok {
+		if oneOfNester.KeyRotation != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.KeyRotation); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("KeyRotation", err)
 			}
 		}
 	}

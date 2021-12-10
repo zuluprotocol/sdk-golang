@@ -31,7 +31,7 @@ service TradingDataService {
   // asset in the network.
   rpc FeeInfrastructureAccounts(FeeInfrastructureAccountsRequest) returns (FeeInfrastructureAccountsResponse);
 
-  // Get a list of accounts holding rewards pools
+  // Get a list of accounts holding reward pools
   // Can be filtered by asset, there will be 1 reward pool account per
   // asset in the network.
   rpc GlobalRewardPoolAccounts(GlobalRewardPoolAccountsRequest) returns (GlobalRewardPoolAccountsResponse);
@@ -165,6 +165,12 @@ service TradingDataService {
   // Get a specific node by ID
   rpc GetNodeByID(GetNodeByIDRequest) returns (GetNodeByIDResponse);
 
+  // Get all key rotations
+  rpc GetKeyRotations(GetKeyRotationsRequest) returns (GetKeyRotationsResponse);
+
+  // Get all key rotations by node
+  rpc GetKeyRotationsByNode(GetKeyRotationsByNodeRequest) returns (GetKeyRotationsByNodeResponse);
+
   // Get data for a specific epoch, if id omitted it gets the current epoch
   rpc GetEpoch(GetEpochRequest) returns (GetEpochResponse);
 
@@ -249,13 +255,19 @@ service TradingDataService {
   // Get all oracle data
   rpc OracleDataBySpec(OracleDataBySpecRequest) returns (OracleDataBySpecResponse);
 
-  // Get Rewards data
+  // subscribe to reward details
+  rpc ObserveRewardDetails(ObserveRewardDetailsRequest) returns (stream ObserveRewardDetailsResponse);
+
+  // Get Reward data
   rpc GetRewardDetails(GetRewardDetailsRequest) returns (GetRewardDetailsResponse);
 
   rpc Checkpoints(CheckpointsRequest) returns (CheckpointsResponse);
 
   // Get delegation data
   rpc Delegations(DelegationsRequest) returns (DelegationsResponse);
+
+  // subscribe to delegation events
+  rpc ObserveDelegations(ObserveDelegationsRequest) returns (stream ObserveDelegationsResponse);
 
   rpc PartyStake(PartyStakeRequest) returns (PartyStakeResponse);
 }
@@ -272,6 +284,17 @@ message DelegationsRequest {
 
 message DelegationsResponse {
   repeated vega.Delegation delegations = 1;
+}
+
+// Request to obsever all event related to delegation with the given filters
+message ObserveDelegationsRequest {
+  string party = 1;
+  string node_id = 2;
+}
+
+// All events related to delegation with the given filters
+message ObserveDelegationsResponse {
+  vega.Delegation delegation = 1;
 }
 
 message PartyStakeRequest {
@@ -317,6 +340,32 @@ message GetEpochRequest {
 
 message GetEpochResponse {
   vega.Epoch epoch = 1;
+}
+
+message KeyRotation {
+  string node_id = 1;
+  string old_pub_key = 2;
+  string new_pub_key = 3;
+  uint64 block_height = 4;
+}
+
+// Request to list all key rotations
+message GetKeyRotationsRequest {}
+
+// Response with all key rotations
+message GetKeyRotationsResponse {
+  repeated KeyRotation rotations = 1;
+}
+
+// Request to list all key rotations per node
+message GetKeyRotationsByNodeRequest {
+  // Required id of node
+  string node_id = 1;
+}
+
+// Response with all key rotations per node
+message GetKeyRotationsByNodeResponse {
+  repeated KeyRotation rotations = 1;
 }
 
 // Request for a list of all assets enabled on Vega
@@ -1168,6 +1217,15 @@ message OracleDataBySpecRequest {
 message OracleDataBySpecResponse {
   // The list of oracle data broadcast to a given spec
   repeated oracles.v1.OracleData oracle_data = 1;
+}
+
+message ObserveRewardDetailsRequest {
+  string asset_id = 1;
+  string party = 2;
+}
+
+message ObserveRewardDetailsResponse {
+  vega.RewardDetails reward_details = 1;
 }
 
 // A request to get reward details for a party
