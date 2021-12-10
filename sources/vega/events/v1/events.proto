@@ -59,6 +59,10 @@ message CheckpointEvent {
   uint64 block_height = 3;
 }
 
+message StreamStartEvent {
+  string chain_id = 1;
+}
+
 message RewardPayoutEvent {
   string party = 1;
   string epoch_seq = 2;
@@ -147,9 +151,8 @@ message PositionResolution {
   int64 distressed = 2;
   // Number of close outs
   int64 closed = 3;
-  // Mark price, as an integer, for example `123456` is a correctly
-  // formatted price of `1.23456` assuming market configured to 5 decimal places
-  uint64 mark_price = 4;
+  // Mark price as a string representing a scaled price
+  string mark_price = 4;
 }
 
 // A loss socialization event contains details on the amount of wins unable to be distributed
@@ -159,16 +162,15 @@ message LossSocialization {
   // Party identifier (public key) for the event
   string party_id = 2;
   // Amount distributed
-  int64 amount = 3;
+  string amount = 3;
 }
 
 // A trade settlement is part of the settle position event
 message TradeSettlement {
   // Size of trade settlement
   int64 size = 1;
-  // Price of settlement as an integer, for example `123456` is a correctly
-  // formatted price of `1.23456` assuming market configured to 5 decimal places
-  uint64 price = 2;
+  // Price of settlement as string
+  string price = 2;
 }
 
 // A settle position event contains position settlement information for a party
@@ -177,9 +179,8 @@ message SettlePosition {
   string market_id = 1;
   // Party identifier (public key) for the event
   string party_id = 2;
-  // Price of settlement as an integer, for example `123456` is a correctly
-  // formatted price of `1.23456` assuming market configured to 5 decimal places
-  uint64 price = 3;
+  // Price of settlement as a string
+  string price = 3;
   // A collection of 1 or more trade settlements
   repeated TradeSettlement trade_settlements = 4;
 }
@@ -194,10 +195,10 @@ message SettleDistressed {
   string party_id = 2;
   // Margin value as an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places
-  uint64 margin = 3;
+  string margin = 3;
   // Price as an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places
-  uint64 price = 4;
+  string price = 4;
 }
 
 // A market ticket event contains the time value for when a particular market was last processed on Vega
@@ -245,6 +246,20 @@ message ValidatorUpdate {
   string name = 7;
   // AvatarURL of the validator
   string avatar_url = 8;
+  // Vega public key derivation index
+  uint32 vega_pub_key_index = 9;
+}
+
+// A key rotation events contains information about Vega key rotation
+message KeyRotation {
+  // Node id of the node
+  string node_id = 1;
+  // Old Vega public key of validator node
+  string old_pub_key = 2;
+  // New Vega public key of validator node
+  string new_pub_key = 3;
+  // Height of the block where key rotation took effect
+  uint64 block_height = 4;
 }
 
 // An (event) bus event type is used to specify a type of event
@@ -324,6 +339,10 @@ enum BusEventType {
   BUS_EVENT_TYPE_REWARD_PAYOUT_EVENT = 34;
   // Event indicating a new checkpoint was created
   BUS_EVENT_TYPE_CHECKPOINT = 35;
+  // Event indicating stream is starting
+  BUS_EVENT_TYPE_STREAM_START = 36;
+  // Event indicating key rotation took place
+  BUS_EVENT_TYPE_KEY_ROTATION = 37;
 
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
@@ -396,7 +415,7 @@ message BusEvent {
     oracles.v1.OracleData oracle_data = 127;
     // Delegation balance events
     DelegationBalanceEvent delegation_balance = 129;
-    // Validator score calcualted
+    // Validator score calculated
     ValidatorScoreEvent validator_score = 130;
     // Epoch update events - See [Epoch](#vega.Epoch)
     EpochEvent epoch_event = 131;
@@ -408,6 +427,9 @@ message BusEvent {
     RewardPayoutEvent reward_payout = 134;
     // Checkpoint was created
     CheckpointEvent checkpoint = 135;
+    // Key rotation took place
+    KeyRotation key_rotation = 136;
+
     // Market tick events - See [MarketEvent](#vega.MarketEvent)
     MarketEvent market = 1001;
     // Transaction error events, not included in the ALL event type
@@ -415,4 +437,5 @@ message BusEvent {
   }
   // Version of bus event
   uint32 version = 4;
+  string chain_id = 5;
 }

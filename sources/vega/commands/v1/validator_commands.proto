@@ -24,6 +24,8 @@ message NodeRegistration {
   string name = 7;
   // AvatarURL of the validator
   string avatar_url = 8;
+  // Vega public key derivation index
+  uint32 vega_pub_key_index = 9;
 }
 
 // Used when a node votes for validating a given resource exists or is valid,
@@ -74,4 +76,16 @@ message ChainEvent {
     // Ethereum Staking event
     vega.StakingEvent staking_event = 1005;
   }
+}
+
+// A transaction to allow validator to rotate their vega keys
+message KeyRotateSubmission {
+  // New Vega public key derivation index
+  uint32 new_pub_key_index = 1;
+  // Target block at which the key rotation will take effect on
+  uint64 target_block = 2;
+  // The new public key to rotate to
+  string new_pub_key = 3;
+  // Hash of currently used public key
+  string current_pub_key_hash = 4;
 }

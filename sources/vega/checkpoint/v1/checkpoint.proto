@@ -22,6 +22,8 @@ message Checkpoint {
   bytes delegation = 5;
   bytes epoch = 6; // will just be an epoch event
   bytes block = 7;
+  bytes rewards = 8;
+  bytes key_rotations = 9;
 }
 
 // AssetEntrty is a single (enabled) asset
@@ -78,4 +80,40 @@ message Delegate {
 // was created (ie block height)
 message Block {
   int64 height = 1;
+}
+
+message Rewards {
+  repeated RewardPayout rewards = 1;
+}
+
+message RewardPayout {
+  int64 payout_time = 1;
+  repeated PendingRewardPayout rewards_payout = 2;
+}
+
+message PendingRewardPayout {
+	string from_account = 1;
+	string asset = 2;
+	repeated PartyAmount party_amount = 3;
+	string total_reward = 4;
+	string epoch_seq = 5;
+	int64 timestamp = 6;
+}
+
+message PartyAmount {
+  string party = 1;
+  string amount = 2;
+}
+
+message PendingKeyRotation {
+  // Relative target block height is: target block height - current block height.
+  // Useful for cross blockchain compatibility.
+  uint64 relative_target_block_height = 1;
+  string node_id = 2;
+  string new_pub_key = 3;
+  uint32 new_pub_key_index = 4;
+}
+
+message KeyRotations {
+  repeated PendingKeyRotation pending_key_rotations = 1;
 }

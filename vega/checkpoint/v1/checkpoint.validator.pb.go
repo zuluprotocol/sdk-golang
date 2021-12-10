@@ -97,3 +97,49 @@ func (this *Delegate) Validate() error {
 func (this *Block) Validate() error {
 	return nil
 }
+func (this *Rewards) Validate() error {
+	for _, item := range this.Rewards {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Rewards", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *RewardPayout) Validate() error {
+	for _, item := range this.RewardsPayout {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("RewardsPayout", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *PendingRewardPayout) Validate() error {
+	for _, item := range this.PartyAmount {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("PartyAmount", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *PartyAmount) Validate() error {
+	return nil
+}
+func (this *PendingKeyRotation) Validate() error {
+	return nil
+}
+func (this *KeyRotations) Validate() error {
+	for _, item := range this.PendingKeyRotations {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("PendingKeyRotations", err)
+			}
+		}
+	}
+	return nil
+}

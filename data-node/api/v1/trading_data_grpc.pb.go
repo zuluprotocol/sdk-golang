@@ -27,7 +27,7 @@ type TradingDataServiceClient interface {
 	// Can be filtered by asset, there will be 1 infrastructure fee account per
 	// asset in the network.
 	FeeInfrastructureAccounts(ctx context.Context, in *FeeInfrastructureAccountsRequest, opts ...grpc.CallOption) (*FeeInfrastructureAccountsResponse, error)
-	// Get a list of accounts holding rewards pools
+	// Get a list of accounts holding reward pools
 	// Can be filtered by asset, there will be 1 reward pool account per
 	// asset in the network.
 	GlobalRewardPoolAccounts(ctx context.Context, in *GlobalRewardPoolAccountsRequest, opts ...grpc.CallOption) (*GlobalRewardPoolAccountsResponse, error)
@@ -105,6 +105,10 @@ type TradingDataServiceClient interface {
 	GetNodes(ctx context.Context, in *GetNodesRequest, opts ...grpc.CallOption) (*GetNodesResponse, error)
 	// Get a specific node by ID
 	GetNodeByID(ctx context.Context, in *GetNodeByIDRequest, opts ...grpc.CallOption) (*GetNodeByIDResponse, error)
+	// Get all key rotations
+	GetKeyRotations(ctx context.Context, in *GetKeyRotationsRequest, opts ...grpc.CallOption) (*GetKeyRotationsResponse, error)
+	// Get all key rotations by node
+	GetKeyRotationsByNode(ctx context.Context, in *GetKeyRotationsByNodeRequest, opts ...grpc.CallOption) (*GetKeyRotationsByNodeResponse, error)
 	// Get data for a specific epoch, if id omitted it gets the current epoch
 	GetEpoch(ctx context.Context, in *GetEpochRequest, opts ...grpc.CallOption) (*GetEpochResponse, error)
 	// Get Time
@@ -160,11 +164,15 @@ type TradingDataServiceClient interface {
 	OracleSpecs(ctx context.Context, in *OracleSpecsRequest, opts ...grpc.CallOption) (*OracleSpecsResponse, error)
 	// Get all oracle data
 	OracleDataBySpec(ctx context.Context, in *OracleDataBySpecRequest, opts ...grpc.CallOption) (*OracleDataBySpecResponse, error)
-	// Get Rewards data
+	// subscribe to reward details
+	ObserveRewardDetails(ctx context.Context, in *ObserveRewardDetailsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveRewardDetailsClient, error)
+	// Get Reward data
 	GetRewardDetails(ctx context.Context, in *GetRewardDetailsRequest, opts ...grpc.CallOption) (*GetRewardDetailsResponse, error)
 	Checkpoints(ctx context.Context, in *CheckpointsRequest, opts ...grpc.CallOption) (*CheckpointsResponse, error)
 	// Get delegation data
 	Delegations(ctx context.Context, in *DelegationsRequest, opts ...grpc.CallOption) (*DelegationsResponse, error)
+	// subscribe to delegation events
+	ObserveDelegations(ctx context.Context, in *ObserveDelegationsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveDelegationsClient, error)
 	PartyStake(ctx context.Context, in *PartyStakeRequest, opts ...grpc.CallOption) (*PartyStakeResponse, error)
 }
 
@@ -659,6 +667,24 @@ func (c *tradingDataServiceClient) GetNodeByID(ctx context.Context, in *GetNodeB
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) GetKeyRotations(ctx context.Context, in *GetKeyRotationsRequest, opts ...grpc.CallOption) (*GetKeyRotationsResponse, error) {
+	out := new(GetKeyRotationsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v1.TradingDataService/GetKeyRotations", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) GetKeyRotationsByNode(ctx context.Context, in *GetKeyRotationsByNodeRequest, opts ...grpc.CallOption) (*GetKeyRotationsByNodeResponse, error) {
+	out := new(GetKeyRotationsByNodeResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v1.TradingDataService/GetKeyRotationsByNode", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) GetEpoch(ctx context.Context, in *GetEpochRequest, opts ...grpc.CallOption) (*GetEpochResponse, error) {
 	out := new(GetEpochResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v1.TradingDataService/GetEpoch", in, out, opts...)
@@ -1132,6 +1158,38 @@ func (c *tradingDataServiceClient) OracleDataBySpec(ctx context.Context, in *Ora
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) ObserveRewardDetails(ctx context.Context, in *ObserveRewardDetailsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveRewardDetailsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[15], "/datanode.api.v1.TradingDataService/ObserveRewardDetails", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &tradingDataServiceObserveRewardDetailsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type TradingDataService_ObserveRewardDetailsClient interface {
+	Recv() (*ObserveRewardDetailsResponse, error)
+	grpc.ClientStream
+}
+
+type tradingDataServiceObserveRewardDetailsClient struct {
+	grpc.ClientStream
+}
+
+func (x *tradingDataServiceObserveRewardDetailsClient) Recv() (*ObserveRewardDetailsResponse, error) {
+	m := new(ObserveRewardDetailsResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *tradingDataServiceClient) GetRewardDetails(ctx context.Context, in *GetRewardDetailsRequest, opts ...grpc.CallOption) (*GetRewardDetailsResponse, error) {
 	out := new(GetRewardDetailsResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v1.TradingDataService/GetRewardDetails", in, out, opts...)
@@ -1159,6 +1217,38 @@ func (c *tradingDataServiceClient) Delegations(ctx context.Context, in *Delegati
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) ObserveDelegations(ctx context.Context, in *ObserveDelegationsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveDelegationsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[16], "/datanode.api.v1.TradingDataService/ObserveDelegations", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &tradingDataServiceObserveDelegationsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type TradingDataService_ObserveDelegationsClient interface {
+	Recv() (*ObserveDelegationsResponse, error)
+	grpc.ClientStream
+}
+
+type tradingDataServiceObserveDelegationsClient struct {
+	grpc.ClientStream
+}
+
+func (x *tradingDataServiceObserveDelegationsClient) Recv() (*ObserveDelegationsResponse, error) {
+	m := new(ObserveDelegationsResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *tradingDataServiceClient) PartyStake(ctx context.Context, in *PartyStakeRequest, opts ...grpc.CallOption) (*PartyStakeResponse, error) {
 	out := new(PartyStakeResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v1.TradingDataService/PartyStake", in, out, opts...)
@@ -1180,7 +1270,7 @@ type TradingDataServiceServer interface {
 	// Can be filtered by asset, there will be 1 infrastructure fee account per
 	// asset in the network.
 	FeeInfrastructureAccounts(context.Context, *FeeInfrastructureAccountsRequest) (*FeeInfrastructureAccountsResponse, error)
-	// Get a list of accounts holding rewards pools
+	// Get a list of accounts holding reward pools
 	// Can be filtered by asset, there will be 1 reward pool account per
 	// asset in the network.
 	GlobalRewardPoolAccounts(context.Context, *GlobalRewardPoolAccountsRequest) (*GlobalRewardPoolAccountsResponse, error)
@@ -1258,6 +1348,10 @@ type TradingDataServiceServer interface {
 	GetNodes(context.Context, *GetNodesRequest) (*GetNodesResponse, error)
 	// Get a specific node by ID
 	GetNodeByID(context.Context, *GetNodeByIDRequest) (*GetNodeByIDResponse, error)
+	// Get all key rotations
+	GetKeyRotations(context.Context, *GetKeyRotationsRequest) (*GetKeyRotationsResponse, error)
+	// Get all key rotations by node
+	GetKeyRotationsByNode(context.Context, *GetKeyRotationsByNodeRequest) (*GetKeyRotationsByNodeResponse, error)
 	// Get data for a specific epoch, if id omitted it gets the current epoch
 	GetEpoch(context.Context, *GetEpochRequest) (*GetEpochResponse, error)
 	// Get Time
@@ -1313,11 +1407,15 @@ type TradingDataServiceServer interface {
 	OracleSpecs(context.Context, *OracleSpecsRequest) (*OracleSpecsResponse, error)
 	// Get all oracle data
 	OracleDataBySpec(context.Context, *OracleDataBySpecRequest) (*OracleDataBySpecResponse, error)
-	// Get Rewards data
+	// subscribe to reward details
+	ObserveRewardDetails(*ObserveRewardDetailsRequest, TradingDataService_ObserveRewardDetailsServer) error
+	// Get Reward data
 	GetRewardDetails(context.Context, *GetRewardDetailsRequest) (*GetRewardDetailsResponse, error)
 	Checkpoints(context.Context, *CheckpointsRequest) (*CheckpointsResponse, error)
 	// Get delegation data
 	Delegations(context.Context, *DelegationsRequest) (*DelegationsResponse, error)
+	// subscribe to delegation events
+	ObserveDelegations(*ObserveDelegationsRequest, TradingDataService_ObserveDelegationsServer) error
 	PartyStake(context.Context, *PartyStakeRequest) (*PartyStakeResponse, error)
 	mustEmbedUnimplementedTradingDataServiceServer()
 }
@@ -1449,6 +1547,12 @@ func (UnimplementedTradingDataServiceServer) GetNodes(context.Context, *GetNodes
 func (UnimplementedTradingDataServiceServer) GetNodeByID(context.Context, *GetNodeByIDRequest) (*GetNodeByIDResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetNodeByID not implemented")
 }
+func (UnimplementedTradingDataServiceServer) GetKeyRotations(context.Context, *GetKeyRotationsRequest) (*GetKeyRotationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetKeyRotations not implemented")
+}
+func (UnimplementedTradingDataServiceServer) GetKeyRotationsByNode(context.Context, *GetKeyRotationsByNodeRequest) (*GetKeyRotationsByNodeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetKeyRotationsByNode not implemented")
+}
 func (UnimplementedTradingDataServiceServer) GetEpoch(context.Context, *GetEpochRequest) (*GetEpochResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEpoch not implemented")
 }
@@ -1530,6 +1634,9 @@ func (UnimplementedTradingDataServiceServer) OracleSpecs(context.Context, *Oracl
 func (UnimplementedTradingDataServiceServer) OracleDataBySpec(context.Context, *OracleDataBySpecRequest) (*OracleDataBySpecResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method OracleDataBySpec not implemented")
 }
+func (UnimplementedTradingDataServiceServer) ObserveRewardDetails(*ObserveRewardDetailsRequest, TradingDataService_ObserveRewardDetailsServer) error {
+	return status.Errorf(codes.Unimplemented, "method ObserveRewardDetails not implemented")
+}
 func (UnimplementedTradingDataServiceServer) GetRewardDetails(context.Context, *GetRewardDetailsRequest) (*GetRewardDetailsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRewardDetails not implemented")
 }
@@ -1538,6 +1645,9 @@ func (UnimplementedTradingDataServiceServer) Checkpoints(context.Context, *Check
 }
 func (UnimplementedTradingDataServiceServer) Delegations(context.Context, *DelegationsRequest) (*DelegationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delegations not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ObserveDelegations(*ObserveDelegationsRequest, TradingDataService_ObserveDelegationsServer) error {
+	return status.Errorf(codes.Unimplemented, "method ObserveDelegations not implemented")
 }
 func (UnimplementedTradingDataServiceServer) PartyStake(context.Context, *PartyStakeRequest) (*PartyStakeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PartyStake not implemented")
@@ -2313,6 +2423,42 @@ func _TradingDataService_GetNodeByID_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_GetKeyRotations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetKeyRotationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetKeyRotations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v1.TradingDataService/GetKeyRotations",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetKeyRotations(ctx, req.(*GetKeyRotationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_GetKeyRotationsByNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetKeyRotationsByNodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetKeyRotationsByNode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v1.TradingDataService/GetKeyRotationsByNode",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetKeyRotationsByNode(ctx, req.(*GetKeyRotationsByNodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_GetEpoch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetEpochRequest)
 	if err := dec(in); err != nil {
@@ -2829,6 +2975,27 @@ func _TradingDataService_OracleDataBySpec_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_ObserveRewardDetails_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ObserveRewardDetailsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(TradingDataServiceServer).ObserveRewardDetails(m, &tradingDataServiceObserveRewardDetailsServer{stream})
+}
+
+type TradingDataService_ObserveRewardDetailsServer interface {
+	Send(*ObserveRewardDetailsResponse) error
+	grpc.ServerStream
+}
+
+type tradingDataServiceObserveRewardDetailsServer struct {
+	grpc.ServerStream
+}
+
+func (x *tradingDataServiceObserveRewardDetailsServer) Send(m *ObserveRewardDetailsResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 func _TradingDataService_GetRewardDetails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetRewardDetailsRequest)
 	if err := dec(in); err != nil {
@@ -2881,6 +3048,27 @@ func _TradingDataService_Delegations_Handler(srv interface{}, ctx context.Contex
 		return srv.(TradingDataServiceServer).Delegations(ctx, req.(*DelegationsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ObserveDelegations_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ObserveDelegationsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(TradingDataServiceServer).ObserveDelegations(m, &tradingDataServiceObserveDelegationsServer{stream})
+}
+
+type TradingDataService_ObserveDelegationsServer interface {
+	Send(*ObserveDelegationsResponse) error
+	grpc.ServerStream
+}
+
+type tradingDataServiceObserveDelegationsServer struct {
+	grpc.ServerStream
+}
+
+func (x *tradingDataServiceObserveDelegationsServer) Send(m *ObserveDelegationsResponse) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 func _TradingDataService_PartyStake_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -3053,6 +3241,14 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TradingDataService_GetNodeByID_Handler,
 		},
 		{
+			MethodName: "GetKeyRotations",
+			Handler:    _TradingDataService_GetKeyRotations_Handler,
+		},
+		{
+			MethodName: "GetKeyRotationsByNode",
+			Handler:    _TradingDataService_GetKeyRotationsByNode_Handler,
+		},
+		{
 			MethodName: "GetEpoch",
 			Handler:    _TradingDataService_GetEpoch_Handler,
 		},
@@ -3212,6 +3408,16 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "TransferResponsesSubscribe",
 			Handler:       _TradingDataService_TransferResponsesSubscribe_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "ObserveRewardDetails",
+			Handler:       _TradingDataService_ObserveRewardDetails_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "ObserveDelegations",
+			Handler:       _TradingDataService_ObserveDelegations_Handler,
 			ServerStreams: true,
 		},
 	},
